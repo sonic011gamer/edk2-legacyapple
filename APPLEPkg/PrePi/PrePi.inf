@@ -7,11 +7,9 @@
 
 [Sources.common]
   Pi.c
-  EarlyQGic/EarlyQGic.c
 
 [Sources.ARM]
   ReleaseInfo.S | GCC
-  ProcessorSupport.S | GCC
   ModuleEntryPoint.S | GCC
 
 [BuildOptions.ARM]
@@ -29,6 +27,7 @@
 [LibraryClasses]
   ArmLib
   ArmMmuLib
+  ArmPlatformStackLib
   BaseLib
   DebugLib
   IoLib

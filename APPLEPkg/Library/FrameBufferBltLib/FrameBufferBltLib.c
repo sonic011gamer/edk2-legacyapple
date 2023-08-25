@@ -1,12 +1,15 @@
 /** @file
   FrameBufferBltLib - Library to perform blt operations on a frame buffer.
+
   Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+
 **/
 
 #include <Uefi/UefiBaseType.h>
@@ -31,15 +34,16 @@ struct FRAME_BUFFER_CONFIGURE {
 };
 
 CONST EFI_PIXEL_BITMASK mRgbPixelMasks = {
-  0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000
+  0x0000ff, 0x00ff00, 0xff0000
 };
 
 CONST EFI_PIXEL_BITMASK mBgrPixelMasks = {
-  0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000
+  0xff0000, 0x00ff00, 0x0000ff
 };
 
 /**
   Initialize the bit mask in frame buffer configure.
+
   @param BitMask       The bit mask of pixel.
   @param BytesPerPixel Size in bytes of pixel.
   @param PixelShl      Left shift array.
@@ -79,22 +83,26 @@ FrameBufferBltLibConfigurePixelFormat (
   MergedMasks = (UINT32) (MergedMasks | Masks[3]);
 
   ASSERT (MergedMasks != 0);
-  *BytesPerPixel = (UINT32) ((HighBitSet32 (MergedMasks) + 7) / 8);
+  *BytesPerPixel = 2;
   DEBUG ((DEBUG_INFO, "Bytes per pixel: %d\n", *BytesPerPixel));
 }
 
 /**
   Create the configuration for a video frame buffer.
+
   The configuration is returned in the caller provided buffer.
+
   @param[in] FrameBuffer       Pointer to the start of the frame buffer.
   @param[in] FrameBufferInfo   Describes the frame buffer characteristics.
   @param[in,out] Configure     The created configuration information.
   @param[in,out] ConfigureSize Size of the configuration information.
+
   @retval RETURN_SUCCESS            The configuration was successful created.
   @retval RETURN_BUFFER_TOO_SMALL   The Configure is to too small. The required
                                     size is returned in ConfigureSize.
   @retval RETURN_UNSUPPORTED        The requested mode is not supported by
                                     this implementaion.
+
 **/
 RETURN_STATUS
 EFIAPI
@@ -157,12 +165,7 @@ FrameBufferBltConfigure (
   CopyMem (Configure->PixelShl,    PixelShl, sizeof (PixelShl));
   CopyMem (Configure->PixelShr,    PixelShr, sizeof (PixelShr));
 
-  if (PcdGetBool(IsAndroidPlatform)) {
-   Configure->BytesPerPixel     = BytesPerPixel - (BytesPerPixel / 4); // Defaults to ex. 24bpp for 32bpp and 3bpp for 4bpp usecases
-  } else {
-   Configure->BytesPerPixel     = BytesPerPixel;
-  }
-
+  Configure->BytesPerPixel     = BytesPerPixel;
   Configure->PixelFormat       = FrameBufferInfo->PixelFormat;
   Configure->FrameBuffer       = (UINT8*) FrameBuffer;
   Configure->Width             = FrameBufferInfo->HorizontalResolution;
@@ -174,6 +177,7 @@ FrameBufferBltConfigure (
 
 /**
   Performs a UEFI Graphics Output Protocol Blt Video Fill.
+
   @param[in]  Configure     Pointer to a configuration which was successfully
                             created by FrameBufferBltConfigure ().
   @param[in]  Color         Color to fill the region with.
@@ -181,8 +185,10 @@ FrameBufferBltConfigure (
   @param[in]  DestinationY  Y location to start fill operation.
   @param[in]  Width         Width (in pixels) to fill.
   @param[in]  Height        Height to fill.
+
   @retval  RETURN_INVALID_PARAMETER Invalid parameter was passed in.
   @retval  RETURN_SUCCESS           The video was filled successfully.
+
 **/
 EFI_STATUS
 FrameBufferBltLibVideoFill (
@@ -324,6 +330,7 @@ FrameBufferBltLibVideoFill (
 /**
   Performs a UEFI Graphics Output Protocol Blt Video to Buffer operation
   with extended parameters.
+
   @param[in]  Configure     Pointer to a configuration which was successfully
                             created by FrameBufferBltConfigure ().
   @param[out] BltBuffer     Output buffer for pixel color data.
@@ -334,6 +341,7 @@ FrameBufferBltLibVideoFill (
   @param[in]  Width         Width (in pixels).
   @param[in]  Height        Height.
   @param[in]  Delta         Number of bytes in a row of BltBuffer.
+
   @retval RETURN_INVALID_PARAMETER Invalid parameter were passed in.
   @retval RETURN_SUCCESS           The Blt operation was performed successfully.
 **/
@@ -430,6 +438,7 @@ FrameBufferBltLibVideoToBltBuffer (
 /**
   Performs a UEFI Graphics Output Protocol Blt Buffer to Video operation
   with extended parameters.
+
   @param[in]  Configure     Pointer to a configuration which was successfully
                             created by FrameBufferBltConfigure ().
   @param[in]  BltBuffer     Output buffer for pixel color data.
@@ -440,6 +449,7 @@ FrameBufferBltLibVideoToBltBuffer (
   @param[in]  Width         Width (in pixels).
   @param[in]  Height        Height.
   @param[in]  Delta         Number of bytes in a row of BltBuffer.
+
   @retval RETURN_INVALID_PARAMETER Invalid parameter were passed in.
   @retval RETURN_SUCCESS           The Blt operation was performed successfully.
 **/
@@ -532,6 +542,7 @@ FrameBufferBltLibBufferToVideo (
 
 /**
   Performs a UEFI Graphics Output Protocol Blt Video to Video operation
+
   @param[in]  Configure     Pointer to a configuration which was successfully
                             created by FrameBufferBltConfigure ().
   @param[in]  SourceX       X location within video.
@@ -540,6 +551,7 @@ FrameBufferBltLibBufferToVideo (
   @param[in]  DestinationY  Y location within video.
   @param[in]  Width         Width (in pixels).
   @param[in]  Height        Height.
+
   @retval RETURN_INVALID_PARAMETER Invalid parameter were passed in.
   @retval RETURN_SUCCESS           The Blt operation was performed successfully.
 **/
@@ -615,6 +627,7 @@ FrameBufferBltLibVideoToVideo (
 
 /**
   Performs a UEFI Graphics Output Protocol Blt operation.
+
   @param[in]     Configure    Pointer to a configuration which was successfully
                               created by FrameBufferBltConfigure ().
   @param[in,out] BltBuffer    The data to transfer to screen.
@@ -635,6 +648,7 @@ FrameBufferBltLibVideoToVideo (
                               on. If a subrectangle of the BltBuffer is
                               used, then Delta represents the number of
                               bytes in a row of the BltBuffer.
+
   @retval RETURN_INVALID_PARAMETER Invalid parameter were passed in.
   @retval RETURN_SUCCESS           The Blt operation was performed successfully.
 **/

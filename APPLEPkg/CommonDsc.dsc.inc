@@ -70,7 +70,7 @@
   PL011UartClockLib|ArmPlatformPkg/Library/PL011UartClockLib/PL011UartClockLib.inf
   PL011UartLib|ArmPlatformPkg/Library/PL011UartLib/PL011UartLib.inf
 
-  TimerLib|ArmPkg/Library/ArmArchTimerLib/ArmArchTimerLib.inf
+  TimerLib|APPLEPkg/Library/ArmArchTimerLib/ArmArchTimerLib.inf
 
   UefiDevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   #
@@ -254,7 +254,7 @@
   # PcdPrePiCpuMemorySize
   #
   gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize|0
-  gEmbeddedTokenSpaceGuid.PcdPrePiStackBase|0x80C00000
+  gEmbeddedTokenSpaceGuid.PcdPrePiStackBase|0x85C00000
   gEmbeddedTokenSpaceGuid.PcdPrePiStackSize|0x00040000      # 256K stack
   gEfiMdePkgTokenSpaceGuid.PcdMaximumUnicodeStringLength|1000000
   gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength|1000000

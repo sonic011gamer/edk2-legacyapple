@@ -1,7 +1,7 @@
 Attempt to create a minimal EDK2 for APPLE ARM32 devices
 
 ## Status
-Yet to be booted.
+Boots to DXECore.
 
 ## Building
 Tested on Ubuntu 22.04.

@@ -14,7 +14,7 @@
 [PcdsFixedAtBuild.common]
   # System Memory (0.5GB)
   gArmTokenSpaceGuid.PcdSystemMemoryBase|0x80000000
-  gArmTokenSpaceGuid.PcdSystemMemorySize|0x10000000
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x20000000
   
   gArmPlatformTokenSpaceGuid.PcdCoreCount|1
   gArmPlatformTokenSpaceGuid.PcdClusterCount|1
@@ -26,15 +26,14 @@
   #gArmTokenSpaceGuid.PcdGicDistributorBase|0x0b000000
   #gArmTokenSpaceGuid.PcdGicInterruptInterfaceBase|0x0b002000
 
-  gArmTokenSpaceGuid.PcdCpuVectorBaseAddress|0x82008000
-  gArmTokenSpaceGuid.PcdCpuResetAddress|0x82008000
+  gArmTokenSpaceGuid.PcdCpuVectorBaseAddress|0x85C40000
 
   # Framebuffer (720x1280)
-  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferWidth|1024
-  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferHeight|768
-  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferVisibleWidth|1024
-  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferVisibleHeight|768
+  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferWidth|640
+  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferHeight|1136
+  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferVisibleWidth|640
+  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferVisibleHeight|1136
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferPixelBpp|32
-  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferAddress|0x9f6fc000
+  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferAddress|0xbf700000
 
 

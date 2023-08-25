@@ -10,8 +10,9 @@
 #include <Library/DxeServicesTableLib.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Library/BaseLib.h>
-#include <Library/FrameBufferBltLib.h>
+#include "Library/FrameBufferBltLib.h"
 #include <Library/CacheMaintenanceLib.h>
+
 /// Defines
 /*
  * Convert enum video_log2_bpp to bytes and bits. Note we omit the outer
@@ -20,20 +21,8 @@
 #define VNBYTES(bpix)	(1 << (bpix)) / 8
 #define VNBITS(bpix)	(1 << (bpix))
 
-#define POS_TO_FB(posX, posY) ((UINT8 *)                                \
-                               ((UINTN)This->Mode->FrameBufferBase +    \
-                                (posY) * This->Mode->Info->PixelsPerScanLine * \
-                                FB_BYTES_PER_PIXEL +                   \
-                                (posX) * FB_BYTES_PER_PIXEL))
-
 #define FB_BITS_PER_PIXEL                   (32)
 #define FB_BYTES_PER_PIXEL                  (FB_BITS_PER_PIXEL / 8)
-#define DISPLAYDXE_PHYSICALADDRESS32(_x_)   (UINTN)((_x_) & 0xFFFFFFFF)
-
-#define DISPLAYDXE_RED_MASK                0xFF0000
-#define DISPLAYDXE_GREEN_MASK              0x00FF00
-#define DISPLAYDXE_BLUE_MASK               0x0000FF
-#define DISPLAYDXE_ALPHA_MASK              0x000000
 
 /*
  * Bits per pixel selector. Each value n is such that the bits-per-pixel is
@@ -76,7 +65,7 @@ DISPLAY_DEVICE_PATH mDisplayDevicePath =
     }
 };
 
-/// Declares
+/// DeclaresSimpleFbDxe/SimpleFbDxe.c
 
 STATIC FRAME_BUFFER_CONFIGURE        *mFrameBufferBltLibConfigure;
 STATIC UINTN                         mFrameBufferBltLibConfigureSize;
@@ -183,28 +172,31 @@ DisplayBlt
     IN  UINTN                             Delta         OPTIONAL
 )
 {
-    RETURN_STATUS                         Status;
-    EFI_TPL                               Tpl;
-    //
-    // We have to raise to TPL_NOTIFY, so we make an atomic write to the frame buffer.
-    // We would not want a timer based event (Cursor, ...) to come in while we are
-    // doing this operation.
-    //
-    Tpl = gBS->RaiseTPL(TPL_NOTIFY);
-    Status = FrameBufferBlt(
-        mFrameBufferBltLibConfigure,
-        BltBuffer,
-        BltOperation,
-        SourceX, SourceY,
-        DestinationX, DestinationY, Width, Height,
-        Delta
-    );
-    gBS->RestoreTPL (Tpl);
-	// zhuowei: hack: flush the cache manually since my memory maps are still broken
-	WriteBackInvalidateDataCacheRange((void*)mDisplay.Mode->FrameBufferBase,
-	                                  mDisplay.Mode->FrameBufferSize);
-	// zhuowei: end hack
-    return RETURN_ERROR (Status) ? EFI_INVALID_PARAMETER : EFI_SUCCESS;
+
+  RETURN_STATUS                         Status;
+  EFI_TPL                               Tpl;
+  //
+  // We have to raise to TPL_NOTIFY, so we make an atomic write to the frame buffer.
+  // We would not want a timer based event (Cursor, ...) to come in while we are
+  // doing this operation.
+  //
+  Tpl = gBS->RaiseTPL (TPL_NOTIFY);
+  Status = FrameBufferBlt (
+             mFrameBufferBltLibConfigure,
+             BltBuffer,
+             BltOperation,
+             SourceX, SourceY,
+             DestinationX, DestinationY, Width, Height,
+             Delta
+             );
+  gBS->RestoreTPL (Tpl);
+
+  // zhuowei: hack: flush the cache manually since my memory maps are still broken
+  WriteBackInvalidateDataCacheRange((void*)mDisplay.Mode->FrameBufferBase, 
+    mDisplay.Mode->FrameBufferSize);
+  // zhuowei: end hack
+
+  return RETURN_ERROR (Status) ? EFI_INVALID_PARAMETER : EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -269,43 +261,46 @@ SimpleFbDxeInitialize
     mDisplay.Mode->Info->HorizontalResolution = MipiFrameBufferWidth;
     mDisplay.Mode->Info->VerticalResolution = MipiFrameBufferHeight;
 
-    /* SimpleFB runs on a8r8g8b8 (VIDEO_BPP32) for arm Lumia devices */
+    /* SimpleFB runs on a8r8g8b8 (VIDEO_BPP32) for DB410c */
     UINT32 LineLength = MipiFrameBufferWidth * VNBYTES(VIDEO_BPP32);
     UINT32 FrameBufferSize = LineLength * MipiFrameBufferHeight;
-    UINT32 FrameBufferAddress = MipiFrameBufferAddr;
+    EFI_PHYSICAL_ADDRESS FrameBufferAddress = MipiFrameBufferAddr;
 
     mDisplay.Mode->Info->PixelsPerScanLine = MipiFrameBufferWidth;
-    mDisplay.Mode->Info->PixelFormat = PixelRedGreenBlueReserved8BitPerColor;
+    mDisplay.Mode->Info->PixelFormat = PixelBlueGreenRedReserved8BitPerColor;
     mDisplay.Mode->SizeOfInfo = sizeof(EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
     mDisplay.Mode->FrameBufferBase = FrameBufferAddress;
     mDisplay.Mode->FrameBufferSize = FrameBufferSize;
-    
-  /* Create the FrameBufferBltLib configuration. */
+
+    //
+    // Create the FrameBufferBltLib configuration.
+    //
     Status = FrameBufferBltConfigure (
-        (VOID *) (UINTN) mDisplay.Mode->FrameBufferBase,
-        mDisplay.Mode->Info,
-        mFrameBufferBltLibConfigure,
-        &mFrameBufferBltLibConfigureSize
-    );
-
-    if (Status == RETURN_BUFFER_TOO_SMALL) 
-    {
-        mFrameBufferBltLibConfigure = AllocatePool (mFrameBufferBltLibConfigureSize);
-        if (mFrameBufferBltLibConfigure != NULL) 
-        {
-            Status = FrameBufferBltConfigure (
-                (VOID *) (UINTN) mDisplay.Mode->FrameBufferBase,
-                mDisplay.Mode->Info,
-                mFrameBufferBltLibConfigure,
-                &mFrameBufferBltLibConfigureSize
-            );
-        }
+                     (VOID *) (UINTN) mDisplay.Mode->FrameBufferBase,
+                     mDisplay.Mode->Info,
+                     mFrameBufferBltLibConfigure,
+                     &mFrameBufferBltLibConfigureSize
+                     );
+    if (Status == RETURN_BUFFER_TOO_SMALL) {
+      mFrameBufferBltLibConfigure = AllocatePool (mFrameBufferBltLibConfigureSize);
+      if (mFrameBufferBltLibConfigure != NULL) {
+        Status = FrameBufferBltConfigure (
+                         (VOID *) (UINTN) mDisplay.Mode->FrameBufferBase,
+                         mDisplay.Mode->Info,
+                         mFrameBufferBltLibConfigure,
+                         &mFrameBufferBltLibConfigureSize
+                         );
+      }
     }
-
     ASSERT_EFI_ERROR (Status);
-    ZeroMem((VOID *) FrameBufferAddress, FrameBufferSize);
 
-
+    // zhuowei: clear the screen to black
+    // UEFI standard requires this, since text is white - see OvmfPkg/QemuVideoDxe/Gop.c
+    ZeroMem((void*)FrameBufferAddress, FrameBufferSize);
+    // hack: clear cache
+    WriteBackInvalidateDataCacheRange((void*)FrameBufferAddress, FrameBufferSize);
+    // zhuowei: end
+ 
     /* Register handle */
     Status = gBS->InstallMultipleProtocolInterfaces(
         &hUEFIDisplayHandle,
