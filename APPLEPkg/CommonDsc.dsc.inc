@@ -254,7 +254,7 @@
   # PcdPrePiCpuMemorySize
   #
   gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize|0
-  gEmbeddedTokenSpaceGuid.PcdPrePiStackBase|0x85C00000
+  gEmbeddedTokenSpaceGuid.PcdPrePiStackBase|0x80C00000
   gEmbeddedTokenSpaceGuid.PcdPrePiStackSize|0x00040000      # 256K stack
   gEfiMdePkgTokenSpaceGuid.PcdMaximumUnicodeStringLength|1000000
   gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength|1000000
@@ -291,7 +291,7 @@
   #  DEBUG_EVENT     0x00080000  // Event messages
   #  DEBUG_ERROR     0x80000000  // Error
 
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x800feeCf # 0x8FEF4DCF 
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x8FEF4DCF  # 0x8FEF4DCF  0x800feeCf
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x07
 
   #

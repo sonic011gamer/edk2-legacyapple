@@ -40,6 +40,17 @@ STATIC VOID UartInit(VOID)
        (CHAR16 *)PcdGetPtr(PcdFirmwareVersionString), __TIME__, __DATE__));
 }
 
+STATIC VOID FramebufferRemap(VOID)
+{
+  /* Clear screen at new FB address */ 
+  UINT8 *base = (UINT8 *)0x80400000ull;
+  for (UINTN i = 0; i < 0x00800000; i++) {
+    base[i] = 0;
+  }
+  //Remap our framebuffer
+  MmioWrite32(0x3A100000 + 0x4044, 0x80400000);
+}
+
 VOID Main(IN VOID *StackBase, IN UINTN StackSize)
 {
 
@@ -58,6 +69,7 @@ VOID Main(IN VOID *StackBase, IN UINTN StackSize)
   /* Enable program flow prediction, if supported */
   ArmEnableBranchPrediction();
 
+  FramebufferRemap();
   // Initialize (fake) UART.
   UartInit();
 
@@ -67,12 +79,19 @@ VOID Main(IN VOID *StackBase, IN UINTN StackSize)
   UefiMemoryBase = MemoryBase + FixedPcdGet32(PcdPreAllocatedMemorySize);
   UefiMemorySize = FixedPcdGet32(PcdUefiMemPoolSize);
   StackBase      = (VOID *)(UefiMemoryBase + UefiMemorySize - StackSize);
+  DEBUG((
+        EFI_D_INFO | EFI_D_LOAD,
+        "UEFI Memory Base = 0x%p, UEFI Memory Size = 0x%p\n",
+        UefiMemoryBase,
+        UefiMemorySize
+    ));
 
-  DEBUG(
-      (EFI_D_INFO | EFI_D_LOAD,
-       "UEFI Memory Base = 0x%llx, Size = 0x%llx, Stack Base = 0x%llx, Stack "
-       "Size = 0x%llx\n",
-       UefiMemoryBase, UefiMemorySize, StackBase, StackSize));
+  DEBUG((
+        EFI_D_INFO | EFI_D_LOAD,
+        "Stack Base = 0x%p, Stacks Size = 0x%p\n",
+        StackBase,
+        StackSize
+    ));
 
   // Set up HOB
   HobList = HobConstructor(

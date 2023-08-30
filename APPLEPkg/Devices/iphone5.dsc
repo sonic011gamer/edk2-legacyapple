@@ -9,24 +9,18 @@
   SKUID_IDENTIFIER               = DEFAULT
   FLASH_DEFINITION               = APPLEPkg/APPLEPkg.fdf
 
-!include APPLEPkg/APPLEPkg.dsc
+[BuildOptions.common]
+  GCC:*_*_ARM_CC_FLAGS = -DSILICON_PLATFORM=S5L8950
 
 [PcdsFixedAtBuild.common]
   # System Memory (0.5GB)
   gArmTokenSpaceGuid.PcdSystemMemoryBase|0x80000000
-  gArmTokenSpaceGuid.PcdSystemMemorySize|0x20000000
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x40000000
   
   gArmPlatformTokenSpaceGuid.PcdCoreCount|1
   gArmPlatformTokenSpaceGuid.PcdClusterCount|1
 
-
-  #
-  # ARM General Interrupt Controller
-  #
-  #gArmTokenSpaceGuid.PcdGicDistributorBase|0x0b000000
-  #gArmTokenSpaceGuid.PcdGicInterruptInterfaceBase|0x0b002000
-
-  gArmTokenSpaceGuid.PcdCpuVectorBaseAddress|0x85C40000
+  gArmTokenSpaceGuid.PcdCpuVectorBaseAddress|0x80C40000
 
   # Framebuffer (720x1280)
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferWidth|640
@@ -34,6 +28,6 @@
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferVisibleWidth|640
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferVisibleHeight|1136
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferPixelBpp|32
-  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferAddress|0xbf700000
+  gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferAddress|0x80400000
 
-
+!include APPLEPkg/APPLEPkg.dsc

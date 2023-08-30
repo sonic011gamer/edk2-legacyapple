@@ -51,11 +51,7 @@
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
 
   # SoC Drivers
-  InterruptsLib|APPLEPkg/Library/InterruptsLib/InterruptsLib.inf
-  MallocLib|APPLEPkg/Library/MallocLib/MallocLib.inf
-  LcmLib|APPLEPkg/Library/LcmLib/LcmLib.inf
-  MicroLibC|APPLEPkg/Library/MicroLibC/MicroLibC.inf
-  StrLib|APPLEPkg/Library/StrLib/StrLib.inf
+#  InterruptsLib|APPLEPkg/Library/InterruptsLib/InterruptsLib.inf
 
   # UiApp dependencies
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
@@ -126,18 +122,11 @@
   # GUID of the UI app
   gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
 
-  gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|5
+  gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|0
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
 
   gEmbeddedTokenSpaceGuid.PcdMetronomeTickPeriod|1000
-
-  #
-  #
-  # Fastboot
-  #
-  gEmbeddedTokenSpaceGuid.PcdAndroidFastbootUsbVendorId|0x18d1
-  gEmbeddedTokenSpaceGuid.PcdAndroidFastbootUsbProductId|0xd00d
 
   #
   # Make VariableRuntimeDxe work at emulated non-volatile variable mode.
@@ -198,8 +187,7 @@
 
   MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 
-  ArmPkg/Drivers/ArmGic/ArmGicDxe.inf
-  APPLEPkg/Drivers/TimerDxe/TimerDxe.inf
+  ArmPkg/Drivers/TimerDxe/TimerDxe.inf
 
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
 
@@ -220,29 +208,8 @@
   #
   APPLEPkg/Drivers/APPLEPkgDxe/APPLEPkgDxe.inf
   APPLEPkg/Drivers/SimpleFbDxe/SimpleFbDxe.inf
-  APPLEPkg/Drivers/LogoDxe/LogoDxe.inf
-  #
-  # USB Host Support
-  #
-  MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
+#  APPLEPkg/Drivers/LogoDxe/LogoDxe.inf
 
-  #
-  # USB Mass Storage Support
-  #
-  MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
-
-  #
-  # USB Peripheral Support
-  #
-  EmbeddedPkg/Drivers/AndroidFastbootTransportUsbDxe/FastbootTransportUsbDxe.inf
-
-  #
-  # Fastboot
-  #
-  EmbeddedPkg/Application/AndroidFastboot/AndroidFastbootApp.inf
-
-
-  #
   # FAT filesystem + GPT/MBR partitioning
   #
   MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
