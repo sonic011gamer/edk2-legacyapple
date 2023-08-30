@@ -2,14 +2,14 @@
   Template for Timer Architecture Protocol driver of the ARM flavor
 
   Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-  
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
+
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -27,9 +27,16 @@
 #include <Protocol/Timer.h>
 #include <Protocol/HardwareInterrupt.h>
 
+#define DGT_ENABLE_CLR_ON_MATCH_EN        2
+#define DGT_ENABLE_EN                     1
+
+//
+// Notifications
+//
+EFI_EVENT EfiExitBootServicesEvent      = (EFI_EVENT)NULL;
+
 // The notification function to call on every timer interrupt.
 volatile EFI_TIMER_NOTIFY      mTimerNotifyFunction   = (EFI_TIMER_NOTIFY)NULL;
-
 
 // The current period of the timer interrupt
 volatile UINT64 mTimerPeriod = 0;
@@ -40,6 +47,13 @@ EFI_HARDWARE_INTERRUPT_PROTOCOL *gInterrupt = NULL;
 // Cached interrupt vector
 volatile UINTN  gVector;
 
+
+//void platform_uninit_timer(void)
+//{
+//	writel(0, DGT_ENABLE);
+//	writel(0, DGT_CLEAR);
+//}
+
 /**
 
   C Interrupt Handler calledin the interrupt context when Source interrupt is active.
@@ -49,36 +63,31 @@ volatile UINTN  gVector;
                         what source means.
 
   @param SystemContext  Pointer to system register context. Mostly used by debuggers and will
-                        update the system context after the return from the interrupt if 
+                        update the system context after the return from the interrupt if
                         modified. Don't change these values unless you know what you are doing
 
 **/
+
 VOID
 EFIAPI
 TimerInterruptHandler (
   IN  HARDWARE_INTERRUPT_SOURCE   Source,
-  IN  EFI_SYSTEM_CONTEXT          SystemContext       
+  IN  EFI_SYSTEM_CONTEXT          SystemContext
   )
 {
   EFI_TPL OriginalTPL;
 
   //
-  // DXE core uses this callback for the EFI timer tick. The DXE core uses locks 
-  // that raise to TPL_HIGH and then restore back to current level. Thus we need
-  // to make sure TPL level is set to TPL_HIGH while we are handling the timer tick. 
+  // DXE core uses this callback for the EFI timer tick. 
+  // The DXE core uses locks that raise to TPL_HIGH and then restore back to current level. 
+  // Thus we need to make sure TPL level is set to TPL_HIGH while we are handling the timer tick.
   //
   OriginalTPL = gBS->RaiseTPL (TPL_HIGH_LEVEL);
-
-  // Rearm timer.
-  MmioWrite32 (0xBF102000 + 0x08, 0xFFFFFFFF);
-  MmioWrite32 (0xBF102000 + 0x10, 3);
-  MmioWrite32 (0xBF102000 + 0x10, 1);
-  MmioWrite32 (0xBF102000 + 0x08, mTimerPeriod);
 
   if (mTimerNotifyFunction) {
     mTimerNotifyFunction(mTimerPeriod);
   }
-
+  
   // signal end of interrupt early to help avoid losing subsequent ticks from long duration handlers
   gInterrupt->EndOfInterrupt (gInterrupt, Source);
 
@@ -86,16 +95,16 @@ TimerInterruptHandler (
 }
 
 /**
-  This function registers the handler NotifyFunction so it is called every time 
-  the timer interrupt fires.  It also passes the amount of time since the last 
-  handler call to the NotifyFunction.  If NotifyFunction is NULL, then the 
-  handler is unregistered.  If the handler is registered, then EFI_SUCCESS is 
-  returned.  If the CPU does not support registering a timer interrupt handler, 
-  then EFI_UNSUPPORTED is returned.  If an attempt is made to register a handler 
-  when a handler is already registered, then EFI_ALREADY_STARTED is returned.  
-  If an attempt is made to unregister a handler when a handler is not registered, 
-  then EFI_INVALID_PARAMETER is returned.  If an error occurs attempting to 
-  register the NotifyFunction with the timer interrupt, then EFI_DEVICE_ERROR 
+  This function registers the handler NotifyFunction so it is called every time
+  the timer interrupt fires.  It also passes the amount of time since the last
+  handler call to the NotifyFunction.  If NotifyFunction is NULL, then the
+  handler is unregistered.  If the handler is registered, then EFI_SUCCESS is
+  returned.  If the CPU does not support registering a timer interrupt handler,
+  then EFI_UNSUPPORTED is returned.  If an attempt is made to register a handler
+  when a handler is already registered, then EFI_ALREADY_STARTED is returned.
+  If an attempt is made to unregister a handler when a handler is not registered,
+  then EFI_INVALID_PARAMETER is returned.  If an error occurs attempting to
+  register the NotifyFunction with the timer interrupt, then EFI_DEVICE_ERROR
   is returned.
 
   @param  This             The EFI_TIMER_ARCH_PROTOCOL instance.
@@ -113,6 +122,7 @@ TimerInterruptHandler (
   @retval EFI_DEVICE_ERROR      The timer handler could not be registered.
 
 **/
+
 EFI_STATUS
 EFIAPI
 TimerDriverRegisterHandler (
@@ -135,17 +145,17 @@ TimerDriverRegisterHandler (
 
 /**
 
-  This function adjusts the period of timer interrupts to the value specified 
-  by TimerPeriod.  If the timer period is updated, then the selected timer 
-  period is stored in EFI_TIMER.TimerPeriod, and EFI_SUCCESS is returned.  If 
-  the timer hardware is not programmable, then EFI_UNSUPPORTED is returned.  
-  If an error occurs while attempting to update the timer period, then the 
-  timer hardware will be put back in its state prior to this call, and 
-  EFI_DEVICE_ERROR is returned.  If TimerPeriod is 0, then the timer interrupt 
-  is disabled.  This is not the same as disabling the CPU's interrupts.  
-  Instead, it must either turn off the timer hardware, or it must adjust the 
-  interrupt controller so that a CPU interrupt is not generated when the timer 
-  interrupt fires. 
+  This function adjusts the period of timer interrupts to the value specified
+  by TimerPeriod.  If the timer period is updated, then the selected timer
+  period is stored in EFI_TIMER.TimerPeriod, and EFI_SUCCESS is returned.  If
+  the timer hardware is not programmable, then EFI_UNSUPPORTED is returned.
+  If an error occurs while attempting to update the timer period, then the
+  timer hardware will be put back in its state prior to this call, and
+  EFI_DEVICE_ERROR is returned.  If TimerPeriod is 0, then the timer interrupt
+  is disabled.  This is not the same as disabling the CPU's interrupts.
+  Instead, it must either turn off the timer hardware, or it must adjust the
+  interrupt controller so that a CPU interrupt is not generated when the timer
+  interrupt fires.
 
   @param  This             The EFI_TIMER_ARCH_PROTOCOL instance.
   @param  TimerPeriod      The rate to program the timer interrupt in 100 nS units. If
@@ -161,6 +171,7 @@ TimerDriverRegisterHandler (
   @retval EFI_DEVICE_ERROR      The timer period could not be changed due to a device error.
 
 **/
+
 EFI_STATUS
 EFIAPI
 TimerDriverSetTimerPeriod (
@@ -168,20 +179,17 @@ TimerDriverSetTimerPeriod (
   IN UINT64                   TimerPeriod
   )
 {
-  EFI_STATUS  Status = EFI_SUCCESS;
-
-  if (TimerPeriod == 0) {
-    // Turn off the timer.
-    MmioWrite32( 0xBF102000 + 0x10, 2);  
-    MmioWrite32( 0xBF102000 + 0x10, 0);   
-    Status = gInterrupt->DisableInterruptSource(gInterrupt, gVector);    
-  } else {  
-    gInterrupt->DisableInterruptSource(gInterrupt, gVector);    
-    MmioWrite32 (0xBF102000 + 0x08, 0xFFFFFFFF);
-    MmioWrite32 (0xBF102000 + 0x10, 3);
-    MmioWrite32 (0xBF102000 + 0x10, 1);
-    MmioWrite32 (0xBF102000 + 0x08, TimerPeriod);
-    Status = gInterrupt->EnableInterruptSource(gInterrupt, gVector);    
+  EFI_STATUS  Status;
+  
+  if (TimerPeriod == 0) 
+  {
+    /* Disable the timer interrupt */
+    Status = gInterrupt->DisableInterruptSource(gInterrupt, gVector);
+  } 
+  else 
+  {
+    /* Enable the timer interrupt */
+    Status = gInterrupt->EnableInterruptSource(gInterrupt, gVector);
   }
 
   //
@@ -193,9 +201,9 @@ TimerDriverSetTimerPeriod (
 
 
 /**
-  This function retrieves the period of timer interrupts in 100 ns units, 
-  returns that value in TimerPeriod, and returns EFI_SUCCESS.  If TimerPeriod 
-  is NULL, then EFI_INVALID_PARAMETER is returned.  If a TimerPeriod of 0 is 
+  This function retrieves the period of timer interrupts in 100 ns units,
+  returns that value in TimerPeriod, and returns EFI_SUCCESS.  If TimerPeriod
+  is NULL, then EFI_INVALID_PARAMETER is returned.  If a TimerPeriod of 0 is
   returned, then the timer is currently disabled.
 
   @param  This             The EFI_TIMER_ARCH_PROTOCOL instance.
@@ -223,12 +231,12 @@ TimerDriverGetTimerPeriod (
 }
 
 /**
-  This function generates a soft timer interrupt. If the platform does not support soft 
-  timer interrupts, then EFI_UNSUPPORTED is returned. Otherwise, EFI_SUCCESS is returned. 
-  If a handler has been registered through the EFI_TIMER_ARCH_PROTOCOL.RegisterHandler() 
-  service, then a soft timer interrupt will be generated. If the timer interrupt is 
-  enabled when this service is called, then the registered handler will be invoked. The 
-  registered handler should not be able to distinguish a hardware-generated timer 
+  This function generates a soft timer interrupt. If the platform does not support soft
+  timer interrupts, then EFI_UNSUPPORTED is returned. Otherwise, EFI_SUCCESS is returned.
+  If a handler has been registered through the EFI_TIMER_ARCH_PROTOCOL.RegisterHandler()
+  service, then a soft timer interrupt will be generated. If the timer interrupt is
+  enabled when this service is called, then the registered handler will be invoked. The
+  registered handler should not be able to distinguish a hardware-generated timer
   interrupt from a software-generated timer interrupt.
 
   @param  This             The EFI_TIMER_ARCH_PROTOCOL instance.
@@ -251,24 +259,24 @@ TimerDriverGenerateSoftInterrupt (
   Interface stucture for the Timer Architectural Protocol.
 
   @par Protocol Description:
-  This protocol provides the services to initialize a periodic timer 
+  This protocol provides the services to initialize a periodic timer
   interrupt, and to register a handler that is called each time the timer
   interrupt fires.  It may also provide a service to adjust the rate of the
-  periodic timer interrupt.  When a timer interrupt occurs, the handler is 
-  passed the amount of time that has passed since the previous timer 
+  periodic timer interrupt.  When a timer interrupt occurs, the handler is
+  passed the amount of time that has passed since the previous timer
   interrupt.
 
   @param RegisterHandler
-  Registers a handler that will be called each time the 
-  timer interrupt fires.  TimerPeriod defines the minimum 
-  time between timer interrupts, so TimerPeriod will also 
-  be the minimum time between calls to the registered 
+  Registers a handler that will be called each time the
+  timer interrupt fires.  TimerPeriod defines the minimum
+  time between timer interrupts, so TimerPeriod will also
+  be the minimum time between calls to the registered
   handler.
 
   @param SetTimerPeriod
-  Sets the period of the timer interrupt in 100 nS units.  
-  This function is optional, and may return EFI_UNSUPPORTED.  
-  If this function is supported, then the timer period will 
+  Sets the period of the timer interrupt in 100 nS units.
+  This function is optional, and may return EFI_UNSUPPORTED.
+  If this function is supported, then the timer period will
   be rounded up to the nearest supported timer period.
 
 
@@ -276,8 +284,8 @@ TimerDriverGenerateSoftInterrupt (
   Retrieves the period of the timer interrupt in 100 nS units.
 
   @param GenerateSoftInterrupt
-  Generates a soft timer interrupt that simulates the firing of 
-  the timer interrupt. This service can be used to invoke the   registered handler if the timer interrupt has been masked for 
+  Generates a soft timer interrupt that simulates the firing of
+  the timer interrupt. This service can be used to invoke the   registered handler if the timer interrupt has been masked for
   a period of time.
 
 **/
@@ -287,6 +295,22 @@ EFI_TIMER_ARCH_PROTOCOL   gTimer = {
   TimerDriverGetTimerPeriod,
   TimerDriverGenerateSoftInterrupt
 };
+
+VOID
+EFIAPI
+ExitBootServicesEvent (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS  Status = EFI_SUCCESS;
+
+  DEBUG ((DEBUG_INFO, "Disabling Timer on ExitBootServicesEvent"));
+
+  // Disable the timer
+  Status = TimerDriverSetTimerPeriod (&gTimer, 0);
+  ASSERT_EFI_ERROR (Status);
+}
 
 
 /**
@@ -316,17 +340,18 @@ TimerInitialize (
   Status = gBS->LocateProtocol (&gHardwareInterruptProtocolGuid, NULL, (VOID **)&gInterrupt);
   ASSERT_EFI_ERROR (Status);
 
+  gVector = (6);
+  
   // Disable the timer
   Status = TimerDriverSetTimerPeriod (&gTimer, 0);
   ASSERT_EFI_ERROR (Status);
 
   // Install interrupt handler
-  gVector = (6);
   Status = gInterrupt->RegisterInterruptSource (gInterrupt, gVector, TimerInterruptHandler);
   ASSERT_EFI_ERROR (Status);
 
-  // Set up default timer
-  Status = TimerDriverSetTimerPeriod (&gTimer, FixedPcdGet32(PcdTimerPeriod));
+  // Set up default timer (10ms period)
+  Status = TimerDriverSetTimerPeriod (&gTimer, 100000); /* Change to FixedPcdGet32(PcdTimerPeriod) later */
   ASSERT_EFI_ERROR (Status);
 
   // Install the Timer Architectural Protocol onto a new handle
@@ -337,6 +362,15 @@ TimerInitialize (
                   );
   ASSERT_EFI_ERROR(Status);
 
+  // Register for ExitBootServicesEvent
+  Status = gBS->CreateEvent (
+             EVT_SIGNAL_EXIT_BOOT_SERVICES,
+             TPL_NOTIFY,
+             ExitBootServicesEvent,
+             NULL,
+             &EfiExitBootServicesEvent);
+
+  ASSERT_EFI_ERROR (Status);
 
   return Status;
 }

@@ -123,7 +123,7 @@ InterruptsLibConstructor (
   EFI_STATUS Status;
 
   Status = gBS->LocateProtocol (&gHardwareInterruptProtocolGuid, NULL, (VOID **)&mInterrupt);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT(Status);
 
   return Status;
 }

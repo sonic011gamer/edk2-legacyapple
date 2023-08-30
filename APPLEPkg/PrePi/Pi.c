@@ -69,6 +69,8 @@ VOID Main(IN VOID *StackBase, IN UINTN StackSize)
   /* Enable program flow prediction, if supported */
   ArmEnableBranchPrediction();
 
+  ArmSetAuxCrBit(1);
+  
   FramebufferRemap();
   // Initialize (fake) UART.
   UartInit();

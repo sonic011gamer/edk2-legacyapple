@@ -223,7 +223,6 @@
 
 [BuildOptions.common.EDKII.DXE_RUNTIME_DRIVER]
   GCC:*_*_ARM_DLINK_FLAGS = -z common-page-size=0x1000
-  GCC:*_*_ARM_DLINK_FLAGS = -z common-page-size=0x10000
 
 ################################################################################
 #
@@ -316,7 +315,9 @@
 
   # Set timer interrupt to be triggerred in 1ms to avoid missing
   # serial terminal input characters.
-  gEmbeddedTokenSpaceGuid.PcdTimerPeriod|10000
+  gEmbeddedTokenSpaceGuid.PcdTimerPeriod|100000
+  gEmbeddedTokenSpaceGuid.PcdEmbeddedPerformanceCounterPeriodInNanoseconds|1200
+  gEmbeddedTokenSpaceGuid.PcdEmbeddedPerformanceCounterFrequencyInHz|24000000
   gArmTokenSpaceGuid.PcdVFPEnabled|1
   gEfiMdePkgTokenSpaceGuid.PcdUartDefaultReceiveFifoDepth|32
 

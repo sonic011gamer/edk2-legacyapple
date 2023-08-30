@@ -51,7 +51,7 @@
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
 
   # SoC Drivers
-#  InterruptsLib|APPLEPkg/Library/InterruptsLib/InterruptsLib.inf
+  InterruptsLib|APPLEPkg/Library/InterruptsLib/InterruptsLib.inf
 
   # UiApp dependencies
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
@@ -187,7 +187,8 @@
 
   MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 
-  ArmPkg/Drivers/TimerDxe/TimerDxe.inf
+  APPLEPkg/Drivers/InterruptDxe/InterruptDxe.inf
+  APPLEPkg/Drivers/TimerDxe/TimerDxe.inf
 
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
 
