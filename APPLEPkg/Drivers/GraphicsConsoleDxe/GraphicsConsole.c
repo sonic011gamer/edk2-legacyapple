@@ -292,8 +292,8 @@ InitializeGraphicsConsoleTextMode (
   //
   ValidCount = 0;  
 
-  NewModeBuffer[ValidCount].Columns       = 40;
-  NewModeBuffer[ValidCount].Rows          = 12;
+  NewModeBuffer[ValidCount].Columns       = 128;
+  NewModeBuffer[ValidCount].Rows          = 40;
   NewModeBuffer[ValidCount].GopWidth      = HorizontalResolution;
   NewModeBuffer[ValidCount].GopHeight     = VerticalResolution;
   NewModeBuffer[ValidCount].GopModeNumber = GopModeNumber;

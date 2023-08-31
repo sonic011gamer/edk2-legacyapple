@@ -162,7 +162,7 @@ APRIORI DXE {
   #
   INF APPLEPkg/Drivers/APPLEPkgDxe/APPLEPkgDxe.inf
   INF APPLEPkg/Drivers/SimpleFbDxe/SimpleFbDxe.inf
-#  INF APPLEPkg/Drivers/LogoDxe/LogoDxe.inf
+  INF APPLEPkg/Drivers/LogoDxe/LogoDxe.inf
 
 
   #

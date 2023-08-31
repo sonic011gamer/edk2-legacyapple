@@ -80,7 +80,7 @@
   VarCheckLib|MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
 
   # SimpleFbDxe
-  FrameBufferBltLib|APPLEPkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
+  FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
   
     # Platform Drivers
 !if $(USE_SCREEN_FOR_SERIAL_OUTPUT) == 1
@@ -209,7 +209,7 @@
   #
   APPLEPkg/Drivers/APPLEPkgDxe/APPLEPkgDxe.inf
   APPLEPkg/Drivers/SimpleFbDxe/SimpleFbDxe.inf
-#  APPLEPkg/Drivers/LogoDxe/LogoDxe.inf
+  APPLEPkg/Drivers/LogoDxe/LogoDxe.inf
 
   # FAT filesystem + GPT/MBR partitioning
   #

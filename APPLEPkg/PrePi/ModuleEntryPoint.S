@@ -72,6 +72,11 @@ _SetupPrimaryCoreStack:
   add r4, r0, r1
   add sp, r4, #0
 
+  //Enter SVC mode and set up SVC stack pointer
+  mov     r0,#0x13|0x80|0x40
+  msr     CPSR_c,r0
+  mov     r13,r4
+  
 _EnableCache: 
   bl ArmInvalidateDataCache
   bl ASM_PFX(ArmEnableInstructionCache)
