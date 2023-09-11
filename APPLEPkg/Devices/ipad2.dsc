@@ -31,4 +31,15 @@
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferPixelBpp|32
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferAddress|0x80400000
 
+# Make it so ConOut will choose what's best at startup 
+  [PcdsDynamicDefault.common]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVideoHorizontalResolution|1024 # /8 = column
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVideoVerticalResolution|768 #/19 = row
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSetupVideoHorizontalResolution|1024
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSetupVideoVerticalResolution|768
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutColumn|128
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutRow|40
+  gEfiMdeModulePkgTokenSpaceGuid.PcdConOutColumn|128
+  gEfiMdeModulePkgTokenSpaceGuid.PcdConOutRow|40
+
 !include APPLEPkg/APPLEPkg.dsc

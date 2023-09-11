@@ -121,7 +121,7 @@ SMBIOS_TABLE_TYPE0 mBIOSInfoType0 = {
 };
 
 CHAR8 *mBIOSInfoType0Strings[] = {
-  "Blue spoghet.", // Vendor String
+  "Apple Inc.", // Vendor String
   "Built: " __DATE__,             // BiosVersion String
   "Built: " __DATE__,             // BiosReleaseDate String
   NULL
@@ -142,8 +142,8 @@ SMBIOS_TABLE_TYPE1 mSysInfoType1 = {
   6,    // Family String
 };
 CHAR8  *mSysInfoType1Strings[] = {
-  "Qualcomm",
-  "APPLE",
+  "Apple",
+  "A5/A6",
   "",
   "0bc52bb9-9473-4875-be2a-3973076c20e2",
   "",
@@ -176,8 +176,8 @@ SMBIOS_TABLE_TYPE2  mBoardInfoType2 = {
   { 0 }                     // ContainedObjectHandles[1];
 };
 CHAR8  *mBoardInfoType2Strings[] = {
-  "Qualcomm",
-  "APPLE",
+  "Apple",
+  "A5/A6",
   "",
   "0bc52bb9-9473-4875-be2a-3973076c20e2",
   "",
@@ -207,7 +207,7 @@ SMBIOS_TABLE_TYPE3  mEnclosureInfoType3 = {
   { { 0 } },    // ContainedElements[1];
 };
 CHAR8  *mEnclosureInfoType3Strings[] = {
-  "Qualcomm",
+  "Apple",
   "1",
   "0bc52bb9-9473-4875-be2a-3973076c20e2",
   "",
@@ -298,8 +298,8 @@ SMBIOS_TABLE_TYPE4 mProcessorInfoType4 = {
 
 CHAR8 *mProcessorInfoType4Strings[] = {
   "Socket",
-  "Qualcomm Inc.",
-  "Qualcomm Snapdragon 21x Processor (APPLE)",
+  "Apple Inc.",
+  "Apple A5/A6",
   "APPLE",
   NULL
 };
@@ -387,10 +387,10 @@ SMBIOS_TABLE_TYPE16 mPhyMemArrayInfoType16 = {
   MemoryArrayLocationSystemBoard, // Location;                       ///< The enumeration value from MEMORY_ARRAY_LOCATION.
   MemoryArrayUseSystemMemory,     // Use;                            ///< The enumeration value from MEMORY_ARRAY_USE.
   MemoryErrorCorrectionUnknown,   // MemoryErrorCorrection;          ///< The enumeration value from MEMORY_ERROR_CORRECTION.
-  0xC0000000,                     // MaximumCapacity;
+  0x20000000,                     // MaximumCapacity;
   0xFFFE,                         // MemoryErrorInformationHandle;
-  1,                              // NumberOfMemoryDevices;
-  0xC0000000ULL,                  // ExtendedMaximumCapacity;
+  2,                              // NumberOfMemoryDevices;
+  0x20000000ULL,                  // ExtendedMaximumCapacity;
 };
 CHAR8 *mPhyMemArrayInfoType16Strings[] = {
   NULL
@@ -405,13 +405,13 @@ SMBIOS_TABLE_TYPE17 mMemDevInfoType17 = {
   0xFFFE,     // MemoryErrorInformationHandle;
   0xFFFF,     // TotalWidth;
   0xFFFF,     // DataWidth;
-  0x0C00,     // Size; // When bit 15 is 0: Size in MB
+  0x0200,     // Size; // When bit 15 is 0: Size in MB
               // When bit 15 is 1: Size in KB, and continues in ExtendedSize
   MemoryFormFactorTsop, // FormFactor;                     ///< The enumeration value from MEMORY_FORM_FACTOR.
   0xff,       // DeviceSet;
   0,          // DeviceLocator String
   0,          // BankLocator String
-  MemoryTypeDdr3,         // MemoryType;                     ///< The enumeration value from MEMORY_DEVICE_TYPE.
+  MemoryTypeDdr2,         // MemoryType;                     ///< The enumeration value from MEMORY_DEVICE_TYPE.
   {           // TypeDetail;
     0,  // Reserved        :1;
     0,  // Other           :1;
@@ -430,7 +430,7 @@ SMBIOS_TABLE_TYPE17 mMemDevInfoType17 = {
     0,  // Unbuffered      :1;
     0,  // Reserved1       :1;
   },
-  1200,          // Speed;
+  1066,       // Speed;
   0,          // Manufacturer String
   0,          // SerialNumber String
   0,          // AssetTag String
@@ -449,8 +449,8 @@ CHAR8 *mMemDevInfoType17Strings[] = {
 ************************************************************************/
 SMBIOS_TABLE_TYPE19 mMemArrMapInfoType19 = {
   { EFI_SMBIOS_TYPE_MEMORY_ARRAY_MAPPED_ADDRESS, sizeof (SMBIOS_TABLE_TYPE19), 0 },
-  0x00000000, // StartingAddress;
-  0x00000000, // EndingAddress;
+  0x80000000, // StartingAddress;
+  0xC0000000, // EndingAddress;
   0,          // MemoryArrayHandle;
   1,          // PartitionWidth;
   0,          // ExtendedStartingAddress;
