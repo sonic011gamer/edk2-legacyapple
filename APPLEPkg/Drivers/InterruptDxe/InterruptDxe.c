@@ -275,23 +275,23 @@ IrqInterruptHandler (
   IN EFI_SYSTEM_CONTEXT           SystemContext
   )
 {
-  UINT32                     Vector;
-  HARDWARE_INTERRUPT_HANDLER InterruptHandler;
-  
-  Vector = MmioRead32 (VIC(0) + VICADDRESS);
-
-  // Needed to prevent infinite nesting when Time Driver lowers TPL
-  ArmDataSynchronizationBarrier ();
-  
-  InterruptHandler = gRegisteredInterruptHandlers[Vector];
-  if (InterruptHandler != NULL) {
-    // Call the registered interrupt handler.
-    InterruptHandler (Vector, SystemContext);
-  }
-  
-  // Needed to clear after running the handler
-  MmioWrite32 (VIC(0) + VICADDRESS, 0);
-  ArmDataSynchronizationBarrier ();
+  //UINT32                     Vector;
+  //HARDWARE_INTERRUPT_HANDLER InterruptHandler;
+  //
+  //Vector = MmioRead32 (VIC(0) + VICADDRESS);
+  //
+  //// Needed to prevent infinite nesting when Time Driver lowers TPL
+  //ArmDataSynchronizationBarrier ();
+  //
+  //InterruptHandler = gRegisteredInterruptHandlers[Vector];
+  //if (InterruptHandler != NULL) {
+  //  // Call the registered interrupt handler.
+  //  InterruptHandler (Vector, SystemContext);
+  //}
+  //
+  //// Needed to clear after running the handler
+  //MmioWrite32 (VIC(0) + VICADDRESS, 0);
+  //ArmDataSynchronizationBarrier ();
 }
 
 //
@@ -334,33 +334,33 @@ InterruptDxeInitialize (
   ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gHardwareInterruptProtocolGuid);
 
   // Make sure all interrupts are disabled by default.
-  MmioWrite32(VIC(0) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(1) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(2) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(3) + VICINTENCLEAR, 0xFFFFFFFF);
-
-  MmioWrite32(VIC(0) + VICINTENABLE, 0);
-  MmioWrite32(VIC(1) + VICINTENABLE, 0);
-  MmioWrite32(VIC(2) + VICINTENABLE, 0);
-  MmioWrite32(VIC(3) + VICINTENABLE, 0);
-  
-  MmioWrite32(VIC(0) + VICINTSELECT, 0);
-  MmioWrite32(VIC(1) + VICINTSELECT, 0);
-  MmioWrite32(VIC(2) + VICINTSELECT, 0);
-  MmioWrite32(VIC(3) + VICINTSELECT, 0);
-
-  MmioWrite32(VIC(0) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(1) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(2) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(3) + VICSWPRIORITYMASK, 0xFFFF);
-
-  int i;
-  for (i = 0; i < 0x20; i++) {
-    MmioWrite32(VIC(0) + VICVECTADDRS + (i * 4), (0x20 * 0) + i);
-    MmioWrite32(VIC(1) + VICVECTADDRS + (i * 4), (0x20 * 1) + i);
-    MmioWrite32(VIC(2) + VICVECTADDRS + (i * 4), (0x20 * 2) + i);
-    MmioWrite32(VIC(3) + VICVECTADDRS + (i * 4), (0x20 * 3) + i);
-  }
+  //MmioWrite32(VIC(0) + VICINTENCLEAR, 0xFFFFFFFF);
+  //MmioWrite32(VIC(1) + VICINTENCLEAR, 0xFFFFFFFF);
+  //MmioWrite32(VIC(2) + VICINTENCLEAR, 0xFFFFFFFF);
+  //MmioWrite32(VIC(3) + VICINTENCLEAR, 0xFFFFFFFF);
+  //
+  //MmioWrite32(VIC(0) + VICINTENABLE, 0);
+  //MmioWrite32(VIC(1) + VICINTENABLE, 0);
+  //MmioWrite32(VIC(2) + VICINTENABLE, 0);
+  //MmioWrite32(VIC(3) + VICINTENABLE, 0);
+  //
+  //MmioWrite32(VIC(0) + VICINTSELECT, 0);
+  //MmioWrite32(VIC(1) + VICINTSELECT, 0);
+  //MmioWrite32(VIC(2) + VICINTSELECT, 0);
+  //MmioWrite32(VIC(3) + VICINTSELECT, 0);
+  //
+  //MmioWrite32(VIC(0) + VICSWPRIORITYMASK, 0xFFFF);
+  //MmioWrite32(VIC(1) + VICSWPRIORITYMASK, 0xFFFF);
+  //MmioWrite32(VIC(2) + VICSWPRIORITYMASK, 0xFFFF);
+  //MmioWrite32(VIC(3) + VICSWPRIORITYMASK, 0xFFFF);
+  //
+  //int i;
+  //for (i = 0; i < 0x20; i++) {
+  //  MmioWrite32(VIC(0) + VICVECTADDRS + (i * 4), (0x20 * 0) + i);
+  //  MmioWrite32(VIC(1) + VICVECTADDRS + (i * 4), (0x20 * 1) + i);
+  //  MmioWrite32(VIC(2) + VICVECTADDRS + (i * 4), (0x20 * 2) + i);
+  //  MmioWrite32(VIC(3) + VICVECTADDRS + (i * 4), (0x20 * 3) + i);
+  //}
 
  
   Status = gBS->InstallMultipleProtocolInterfaces(&gHardwareInterruptHandle,
@@ -378,17 +378,17 @@ InterruptDxeInitialize (
   // Unregister the default exception handler.
   //
   Status = Cpu->RegisterInterruptHandler(Cpu, EXCEPT_ARM_IRQ, NULL);
-  ASSERT_EFI_ERROR(Status);
+  //ASSERT_EFI_ERROR(Status);
 
   //
   // Register to receive interrupts
   //
   Status = Cpu->RegisterInterruptHandler(Cpu, EXCEPT_ARM_IRQ, IrqInterruptHandler);
-  ASSERT_EFI_ERROR(Status);
+  //ASSERT_EFI_ERROR(Status);
 
   // Register for an ExitBootServicesEvent
   Status = gBS->CreateEvent(EVT_SIGNAL_EXIT_BOOT_SERVICES, TPL_NOTIFY, ExitBootServicesEvent, NULL, &EfiExitBootServicesEvent);
-  ASSERT_EFI_ERROR(Status);
+  //ASSERT_EFI_ERROR(Status);
 
   return Status;
 }

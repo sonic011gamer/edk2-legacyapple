@@ -1,7 +1,7 @@
 Attempt to create a minimal EDK2 for APPLE ARM32 devices
 
 ## Status
-Boots to DXECore.
+Boots to UEFI shell (need to test again on iPad 2)
 
 ## Building
 Tested on Ubuntu 22.04.
@@ -33,5 +33,5 @@ Finally, ./build.sh, or ./saana.sh if you are planning to test on the 650 with L
 Then fastboot boot uefi.img from lk2nd.
 
 # Credits
-
+@ivoszbg for u-boot bringup which helped for Timer
 SimpleFbDxe screen driver is from imbushuo's [Lumia950XLPkg](https://github.com/WOA-Project/Lumia950XLPkg).

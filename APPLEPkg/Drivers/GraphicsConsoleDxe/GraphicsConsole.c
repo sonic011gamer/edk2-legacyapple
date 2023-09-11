@@ -48,6 +48,8 @@ GRAPHICS_CONSOLE_DEV    mGraphicsConsoleDevTemplate = {
 GRAPHICS_CONSOLE_MODE_DATA mGraphicsConsoleModeData[] = {
   {100, 31},
   {40, 12}, 
+  {128, 40},
+  {80, 59},
   //
   // New modes can be added here.
   // The last entry is specific for full screen mode.
@@ -292,8 +294,8 @@ InitializeGraphicsConsoleTextMode (
   //
   ValidCount = 0;  
 
-  NewModeBuffer[ValidCount].Columns       = 128;
-  NewModeBuffer[ValidCount].Rows          = 40;
+  NewModeBuffer[ValidCount].Columns       = 80;
+  NewModeBuffer[ValidCount].Rows          = 59;
   NewModeBuffer[ValidCount].GopWidth      = HorizontalResolution;
   NewModeBuffer[ValidCount].GopHeight     = VerticalResolution;
   NewModeBuffer[ValidCount].GopModeNumber = GopModeNumber;
@@ -303,13 +305,13 @@ InitializeGraphicsConsoleTextMode (
   NewModeBuffer[ValidCount].DeltaY        = (VerticalResolution - (NewModeBuffer[ValidCount].Rows * EFI_GLYPH_HEIGHT)) >> 1;      
   ValidCount++;
 
-  if ((MaxColumns >= 80) && (MaxRows >= 50)) {
-    NewModeBuffer[ValidCount].Columns = 80;
-    NewModeBuffer[ValidCount].Rows    = 50;
+  if ((MaxColumns >= 128) && (MaxRows >= 40)) {
+    NewModeBuffer[ValidCount].Columns = 128;
+    NewModeBuffer[ValidCount].Rows    = 40;
     NewModeBuffer[ValidCount].DeltaX        = 0;
     NewModeBuffer[ValidCount].DeltaY        = 0;     
-    NewModeBuffer[ValidCount].DeltaX  = (HorizontalResolution - (80 * EFI_GLYPH_WIDTH)) >> 1;
-    NewModeBuffer[ValidCount].DeltaY  = (VerticalResolution - (50 * EFI_GLYPH_HEIGHT)) >> 1;    
+    NewModeBuffer[ValidCount].DeltaX  = (HorizontalResolution - (128 * EFI_GLYPH_WIDTH)) >> 1;
+    NewModeBuffer[ValidCount].DeltaY  = (VerticalResolution - (40 * EFI_GLYPH_HEIGHT)) >> 1;    
   }
   NewModeBuffer[ValidCount].GopWidth      = HorizontalResolution;
   NewModeBuffer[ValidCount].GopHeight     = VerticalResolution;

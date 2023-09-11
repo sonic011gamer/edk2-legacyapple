@@ -800,8 +800,8 @@ ConSplitterTextOutConstructor (
   //
   // Setup the default console to 40 x 12 and mode to 0
   //
-  ConOutPrivate->TextOutQueryData[0].Columns  = 128;
-  ConOutPrivate->TextOutQueryData[0].Rows     = 40;
+  ConOutPrivate->TextOutQueryData[0].Columns  = 80;
+  ConOutPrivate->TextOutQueryData[0].Rows     = 59;
   TextOutSetMode (ConOutPrivate, 0);
 
 
@@ -3087,6 +3087,9 @@ ConsplitterSetConsoleOutMode (
       if (Col == 128 && Row == 40) {
         BaseMode = Mode;
       }
+      else if (Col == 80 && Row == 59) {
+        BaseMode = Mode;
+      }
     }
   }
 
@@ -3101,9 +3104,9 @@ ConsplitterSetConsoleOutMode (
     Status = TextOut->SetMode (TextOut, BaseMode);
     ASSERT(!EFI_ERROR(Status));
 
-    Status = PcdSet32S (PcdConOutColumn, 128);
+    Status = PcdSet32S (PcdConOutColumn, 80);
     ASSERT(!EFI_ERROR(Status));
-    Status = PcdSet32S (PcdConOutRow, 40);
+    Status = PcdSet32S (PcdConOutRow, 59);
     ASSERT(!EFI_ERROR(Status));
   }
 

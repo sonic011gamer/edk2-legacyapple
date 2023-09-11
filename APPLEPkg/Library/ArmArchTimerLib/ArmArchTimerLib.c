@@ -15,6 +15,10 @@
 #include <Library/PcdLib.h>
 #include <Library/ArmGenericTimerCounterLib.h>
 
+#define OSC_FREQ          (24000000UL)
+#define AIC_BASE_ADDR     (0x3F200000)
+#define rAIC_TIME_LO      (*(volatile UINT32 *)(AIC_BASE_ADDR + 0x0020))
+/* timer */
 
 RETURN_STATUS
 EFIAPI
@@ -40,7 +44,10 @@ MicroSecondDelay (
   IN      UINTN  MicroSeconds
   )
 {
+  UINT32 start_time = rAIC_TIME_LO;
+  UINT32 delta_time = MicroSeconds * (OSC_FREQ / 1000000);
 
+  while ((rAIC_TIME_LO - start_time) < delta_time);
 
   return MicroSeconds;
 }
@@ -64,7 +71,14 @@ NanoSecondDelay (
   IN  UINTN  NanoSeconds
   )
 {
+  UINTN  MicroSeconds;
 
+  // Round up to 1us Tick Number
+  MicroSeconds  = NanoSeconds / 1000;
+  MicroSeconds += ((NanoSeconds % 1000) == 0) ? 0 : 1;
+
+  MicroSecondDelay (MicroSeconds);
+  
   return NanoSeconds;
 }
 
@@ -150,6 +164,6 @@ GetTimeInNanoSecond (
   IN      UINT64  Ticks
   )
 {
-  UINT64  NanoSeconds = 0;
+  UINT64  NanoSeconds = Ticks / (OSC_FREQ / 1000000);
   return NanoSeconds;
 }
