@@ -63,16 +63,16 @@ static ARM_MEMORY_REGION_DESCRIPTOR_EX gDeviceMemoryDescriptorEx[] = {
 //------------- Register Regions ----------
 {0x00000000, 0x80000000, "Peripherals",            AddDev, MMAP_IO,  UNCACHEABLE,  MmIO,   NS_DEVICE},
 //------------- DDR Regions ------},
-{0x80000000, 0x00200000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
-{0x80200000, 0x00100000, "UEFI FD",                AddMem, SYS_MEM, SYS_MEM_CAP,   BsCode, WRITE_BACK},
-{0x80300000, 0x00100000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
+{0x80000000, 0x00400000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
 {0x80400000, 0x00800000, "Display Reserved",       AddMem, MEM_RES, WRITE_THROUGH, MaxMem, WRITE_THROUGH},
 {0x80C00000, 0x00040000, "UEFI Stack",             AddMem, SYS_MEM, SYS_MEM_CAP,   BsData, WRITE_BACK},
 {0x80C40000, 0x00010000, "CPU Vectors",            AddMem, SYS_MEM, SYS_MEM_CAP,   BsCode, WRITE_BACK},
-{0x80C50000, 0x1F3B0000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
-#if SILICON_PLATFORM == S5L8950
+{0x80C50000, 0x033B0000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
+{0x84000000, 0x00900000, "UEFI FD",                AddMem, SYS_MEM, SYS_MEM_CAP,   BsCode, WRITE_BACK},
+{0x84900000, 0x1B700000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
+//#if SILICON_PLATFORM == S5L8950
 {0xA0000000, 0x20000000, "RAM Partiton",           AddMem, SYS_MEM, SYS_MEM_CAP,   Conv,   WRITE_BACK},
-#endif
+//#endif
 
 //------------- Terminator for MMU ----------
 {0, 0, "Terminator", 0, 0, 0, 0, 0}

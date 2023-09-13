@@ -29,10 +29,12 @@
 
 [Guids.common]
   gAPPLEPkgTokenSpaceGuid        = { 0x99a14446, 0xaad7, 0xe460, {0xb4, 0xe5, 0x1f, 0x79, 0xaa, 0xa4, 0x93, 0xfd } }
+  gAPPLEPkgEmbeddedRamdiskGuid = { 0x650b7cd0, 0x94f8, 0x46cc, { 0x88, 0xde, 0x8c, 0x19, 0x9d, 0x41, 0xed, 0xa3} }
 [Protocols]
   gEFIDroidKeypadDeviceProtocolGuid = { 0xb27625b5, 0x0b6c, 0x4614, { 0xaa, 0x3c, 0x33, 0x13, 0xb5, 0x1d, 0x36, 0x46 } }
 
 [PcdsFixedAtBuild.common]
+  gAPPLEPkgTokenSpaceGuid.PcdInitializeRamdisk|TRUE|BOOLEAN|0x00003902
   # Simple FrameBuffer
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE|BOOLEAN|1
   gAPPLEPkgTokenSpaceGuid.PcdMipiFrameBufferAddress|0x80400000|UINT32|0x0000a400 # 0x7C400000
@@ -45,5 +47,5 @@
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x10000|UINT32|0x00000038
   gArmPlatformTokenSpaceGuid.PcdCPUCoreSecondaryStackSize|0x10000|UINT32|0x00000039
  # Memory allocation
-  gAPPLEPkgTokenSpaceGuid.PcdPreAllocatedMemorySize|0x00D00000|UINT64|0x00000a106
-  gAPPLEPkgTokenSpaceGuid.PcdUefiMemPoolSize|0x03300000|UINT32|0x00000a107
+  gAPPLEPkgTokenSpaceGuid.PcdPreAllocatedMemorySize|0x04900000|UINT64|0x00000a106
+  gAPPLEPkgTokenSpaceGuid.PcdUefiMemPoolSize|0x0F3B0000|UINT32|0x00000a107
