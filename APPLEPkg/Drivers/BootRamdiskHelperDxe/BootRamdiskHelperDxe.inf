@@ -29,9 +29,7 @@
   DevicePathLib
   DxeServicesLib
   DebugLib
-  HiiLib
   PrintLib
-  UefiHiiServicesLib
   UefiBootManagerLib
 
 [Protocols]

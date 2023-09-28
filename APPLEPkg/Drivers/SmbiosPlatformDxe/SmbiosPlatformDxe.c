@@ -387,10 +387,10 @@ SMBIOS_TABLE_TYPE16 mPhyMemArrayInfoType16 = {
   MemoryArrayLocationSystemBoard, // Location;                       ///< The enumeration value from MEMORY_ARRAY_LOCATION.
   MemoryArrayUseSystemMemory,     // Use;                            ///< The enumeration value from MEMORY_ARRAY_USE.
   MemoryErrorCorrectionUnknown,   // MemoryErrorCorrection;          ///< The enumeration value from MEMORY_ERROR_CORRECTION.
-  0x20000000,                     // MaximumCapacity;
+  0xC0000000,                     // MaximumCapacity;
   0xFFFE,                         // MemoryErrorInformationHandle;
-  2,                              // NumberOfMemoryDevices;
-  0x20000000ULL,                  // ExtendedMaximumCapacity;
+  1,                              // NumberOfMemoryDevices;
+  0xC0000000ULL,                  // ExtendedMaximumCapacity;
 };
 CHAR8 *mPhyMemArrayInfoType16Strings[] = {
   NULL
@@ -405,7 +405,7 @@ SMBIOS_TABLE_TYPE17 mMemDevInfoType17 = {
   0xFFFE,     // MemoryErrorInformationHandle;
   0xFFFF,     // TotalWidth;
   0xFFFF,     // DataWidth;
-  0x0200,     // Size; // When bit 15 is 0: Size in MB
+  0x0C00,     // Size; // When bit 15 is 0: Size in MB
               // When bit 15 is 1: Size in KB, and continues in ExtendedSize
   MemoryFormFactorTsop, // FormFactor;                     ///< The enumeration value from MEMORY_FORM_FACTOR.
   0xff,       // DeviceSet;

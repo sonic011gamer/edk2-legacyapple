@@ -30,6 +30,7 @@
   ArmPkg/ArmPkg.dec
   MdePkg/MdePkg.dec
   EmbeddedPkg/EmbeddedPkg.dec
+  APPLEPkg/APPLEPkg.dec
 
 [LibraryClasses]
   BaseLib

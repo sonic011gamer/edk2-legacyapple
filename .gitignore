@@ -2,3 +2,6 @@ uefi.img
 12
 APPLE_UEFI.fd.gz
 BootShim/BootShim.bin
+.irecovery
+APPLEPkg/RAMDisk/
+.vscode

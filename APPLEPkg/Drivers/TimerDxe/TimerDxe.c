@@ -305,11 +305,12 @@ ExitBootServicesEvent (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
-  DEBUG ((DEBUG_INFO, "Disabling Timer on ExitBootServicesEvent"));
+  DEBUG ((DEBUG_INFO, "Disabling Timer on ExitBootServicesEvent\n"));
 
   // Disable the timer
   Status = TimerDriverSetTimerPeriod (&gTimer, 0);
   ASSERT_EFI_ERROR (Status);
+  DEBUG ((DEBUG_INFO, "Disabled Timer on ExitBootServicesEvent\n"));
 }
 
 

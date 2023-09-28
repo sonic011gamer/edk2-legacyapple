@@ -107,8 +107,6 @@ APRIORI DXE {
   INF FatPkg/EnhancedFatDxe/Fat.inf
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
   INF MdeModulePkg/Universal/FvSimpleFileSystemDxe/FvSimpleFileSystemDxe.inf
-  INF MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
-  INF APPLEPkg/Drivers/BootRamdiskHelperDxe/BootRamdiskHelperDxe.inf
 
   INF MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
   INF EmbeddedPkg/EmbeddedMonotonicCounter/EmbeddedMonotonicCounter.inf
@@ -120,6 +118,9 @@ APRIORI DXE {
   INF MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe.inf
   INF APPLEPkg/Drivers/ConSplitterDxe/ConSplitterDxe.inf
   INF APPLEPkg/Drivers/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+  INF MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
+  INF MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
+  INF APPLEPkg/Drivers/BootRamdiskHelperDxe/BootRamdiskHelperDxe.inf
   INF MdeModulePkg/Universal/BdsDxe/BdsDxe.inf  
 }
   INF MdeModulePkg/Core/Dxe/DxeMain.inf
@@ -234,17 +235,16 @@ APRIORI DXE {
   INF MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe.inf
   INF MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
   INF MdeModulePkg/Application/UiApp/UiApp.inf
-#  FILE FREEFORM = f542d663-4b48-40aa-aabf-ff158ccae3bc {
-#    SECTION RAW = APPLEPkg/Include/startup.nsh
-#    SECTION UI = "startup.nsh"
-#  }
 
-  # Embedded RAMDisk (IMG format)
+  INF MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
+  INF APPLEPkg/Drivers/BootRamdiskHelperDxe/BootRamdiskHelperDxe.inf
+
+  # Embedded RAMDisk (ISO format)
   FILE FREEFORM = 650B7CD0-94F8-46CC-88DE-8C199D41EDA3 {
-  SECTION RAW = APPLEPkg/RAMDisk/WinPE.img
-  SECTION UI = "Embedded RAMDisk"  
-}
-
+    SECTION RAW = APPLEPkg/RAMDisk/Win.iso
+    SECTION UI = "Embedded RAMDisk"  
+  }
+################################################################################
 [FV.FVMAIN_COMPACT]
 FvAlignment        = 8
 ERASE_POLARITY     = 1
@@ -267,8 +267,14 @@ READ_LOCK_STATUS   = TRUE
 
   FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     SECTION GUIDED EE4E5898-3914-4259-9D6E-DC7BD79403CF PROCESSING_REQUIRED = TRUE {
+     #
+     # These firmware volumes will have files placed in them uncompressed,
+     # and then both firmware volumes will be compressed in a single
+     # compression operation in order to achieve better overall compression.
+     #
       SECTION FV_IMAGE = FVMAIN
     }
   }
+################################################################################
 
 !include APPLEPkg/CommonFdf.fdf.inc

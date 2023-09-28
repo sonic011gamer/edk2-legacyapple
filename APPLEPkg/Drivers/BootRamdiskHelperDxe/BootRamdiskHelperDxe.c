@@ -42,7 +42,7 @@ BootRamdiskHelperDxeInitialize (
     VOID *OriginalRamDiskPtr;
     VOID *DestinationRamdiskPtr;
     UINTN RamDiskSize;
-    EFI_GUID *RamDiskRegisterType = &gEfiVirtualDiskGuid; //hardcode to IMG image for now
+    EFI_GUID *RamDiskRegisterType = &gEfiVirtualCdGuid; //hardcode to IMG image for now
     EFI_RAM_DISK_PROTOCOL *RamdiskProtocol;
     EFI_DEVICE_PATH_PROTOCOL *DevicePath;
 
@@ -50,6 +50,7 @@ BootRamdiskHelperDxeInitialize (
     // Before proceeding to RAMDisk creation, check that we're configured to do so
     // and that we have a candidate image with which to create said RAMDisk.
     RamdiskBootConfigured = PcdGetBool(PcdInitializeRamdisk);
+    DEBUG((DEBUG_ERROR, "BootRamdiskHelperDxe enter\n"));
     if(!RamdiskBootConfigured) {
         DEBUG((DEBUG_ERROR, "BootRamdiskHelperDxe - FV not configured for ramdisk boot, exiting\n"));
         return EFI_UNSUPPORTED;
@@ -70,13 +71,11 @@ BootRamdiskHelperDxeInitialize (
     Status = gBS->LocateProtocol(&gEfiRamDiskProtocolGuid, NULL, (VOID **)&RamdiskProtocol);
     if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "BootRamdiskHelperDxe: Couldn't find the RAMDisk protocol - %r\n", Status));
-        ASSERT("Failed to locate protocol");
         return Status;
     }
     Status = RamdiskProtocol->Register((UINTN)DestinationRamdiskPtr, (UINT64)RamDiskSize, RamDiskRegisterType, NULL, &DevicePath);
     if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "BootRamdiskHelperDxe: Cannot register RAM Disk - %r\n", Status));
-        ASSERT("Can't register men :(");
     }
 
     return Status;

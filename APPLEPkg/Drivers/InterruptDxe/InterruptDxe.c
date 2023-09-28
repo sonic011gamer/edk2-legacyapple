@@ -1,5 +1,5 @@
 /** @file
-  Handle OMAP35xx interrupt controller 
+  Handle APPLE interrupt controller 
 
   Copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
   
@@ -22,68 +22,41 @@
 #include <Library/PcdLib.h>
 #include <Library/IoLib.h>
 #include <Library/ArmLib.h>
+#include <Library/InterruptsLib.h>
 
 #include <Protocol/Cpu.h>
 #include <Protocol/HardwareInterrupt.h>
 
-#define VIC_START           0x3F200000
-#define VIC_REGISTER_SIZE   0x10000
-#define VIC(x)              (VIC_START + (x * VIC_REGISTER_SIZE))
-
-#define VICIRQSTATUS    0x000
-#define VICRAWINTR      0x8
-#define VICINTSELECT    0xC
-#define VICINTENABLE    0x10
-#define VICINTENCLEAR     0x14
-#define VICSWPRIORITYMASK 0x24
-#define VICVECTADDRS    0x100
-#define VICADDRESS      0xF00
-
+#include <Chipset/interrupts.h>
+//#include <Chipset/irqs.h>
 
 //
 // Notifications
 //
 EFI_EVENT EfiExitBootServicesEvent      = (EFI_EVENT)NULL;
 
-#define MAX_VECTOR    32
+//HARDWARE_INTERRUPT_HANDLER  gRegisteredInterruptHandlers[NR_IRQS];
 
-HARDWARE_INTERRUPT_HANDLER  gRegisteredInterruptHandlers[MAX_VECTOR];
-
-/**
-  Shutdown our hardware
-  
-  DXE Core will disable interrupts and turn off the timer and disable interrupts
-  after all the event handlers have run.
-
-  @param[in]  Event   The Event that is being processed
-  @param[in]  Context Event Context
-**/
-VOID
-EFIAPI
-ExitBootServicesEvent (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  )
+VOID InitInterrupts(VOID)
 {
-  // Disable all interrupts
-  MmioWrite32(VIC(0) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(1) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(2) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(3) + VICINTENCLEAR, 0xFFFFFFFF);
-  MmioWrite32(VIC(0) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(1) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(2) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(3) + VICSWPRIORITYMASK, 0xFFFF);
-  MmioWrite32(VIC(0) + VICINTENABLE, 0);
-  MmioWrite32(VIC(1) + VICINTENABLE, 0);
-  MmioWrite32(VIC(2) + VICINTENABLE, 0);
-  MmioWrite32(VIC(3) + VICINTENABLE, 0);
-  MmioWrite32(VIC(0) + VICINTSELECT, 0);
-  MmioWrite32(VIC(1) + VICINTSELECT, 0);
-  MmioWrite32(VIC(2) + VICINTSELECT, 0);
-  MmioWrite32(VIC(3) + VICINTSELECT, 0);
+	rAIC_GLB_CFG |= AIC_GLBCFG_ACG;
 
-  // Add code here to disable all FIQs as debugger may have turned one on
+	/* Clear the timeout values before setting them to avoid set bits from the default values */
+	rAIC_GLB_CFG &= ~(AIC_GLBCFG_EWT(AIC_GLBCFG_WT_MASK) | AIC_GLBCFG_IWT(AIC_GLBCFG_WT_MASK));
+	rAIC_GLB_CFG |= (AIC_GLBCFG_EWT(AIC_GLBCFG_WT_64MICRO) | AIC_GLBCFG_IWT(AIC_GLBCFG_WT_64MICRO));
+
+	// Enable Interrupts
+	rAIC_GLB_CFG |= AIC_GLBCFG_IEN;
+}
+
+VOID DeinitInterupts(VOID)
+{
+  UINT32 eir;
+
+	/* mask everything */
+	for (eir = 0; eir < kAIC_NUM_EIRS; eir++) {
+		rAIC_EIR_MASK_SET(eir) = 0xffffffff;
+	}
 }
 
 /**
@@ -97,6 +70,8 @@ ExitBootServicesEvent (
   @retval EFI_DEVICE_ERROR  Hardware could not be programmed.
 
 **/
+
+
 EFI_STATUS
 EFIAPI
 RegisterInterruptSource (
@@ -105,21 +80,25 @@ RegisterInterruptSource (
   IN HARDWARE_INTERRUPT_HANDLER         Handler
   )
 {
-  if (Source > MAX_VECTOR) {
-    ASSERT(FALSE);
-    return EFI_UNSUPPORTED;
-  } 
-  
-  if ((Handler == NULL) && (gRegisteredInterruptHandlers[Source] == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if ((Handler != NULL) && (gRegisteredInterruptHandlers[Source] != NULL)) {
-    return EFI_ALREADY_STARTED;
-  }
-
-  gRegisteredInterruptHandlers[Source] = Handler;
-  return This->EnableInterruptSource(This, Source);
+// if (Source > NR_IRQS) {
+//   ASSERT(FALSE);
+//   return EFI_UNSUPPORTED;
+// }
+//
+// DEBUG((EFI_D_ERROR, "Registering Vector: %p\n", Source));//debugging
+// 
+// if ((Handler == NULL) && (gRegisteredInterruptHandlers[Source] == NULL)) {
+//   return EFI_INVALID_PARAMETER;
+// }
+//
+// if ((Handler != NULL) && (gRegisteredInterruptHandlers[Source] != NULL)) {
+//   return EFI_ALREADY_STARTED;
+// }
+//
+// gRegisteredInterruptHandlers[Source] = Handler;
+//
+// return This->EnableInterruptSource (This, Source);
+  return EFI_SUCCESS;
 }
 
 
@@ -140,19 +119,16 @@ EnableInterruptSource (
   IN HARDWARE_INTERRUPT_SOURCE          Source
   )
 {
-  UINTN Bank;
-  UINTN Bit;
-  
-  if (Source > MAX_VECTOR) {
-    ASSERT(FALSE);
-    return EFI_UNSUPPORTED;
-  }
-  
-  Bank = MmioRead32(VIC(0) + VICINTENABLE);
-  Bit  = (Bank | (1 << Source));
-  
-  MmioWrite32 (VIC(0) + VICINTENABLE, Bit);
-  
+//  if (Source > NR_IRQS) {
+//    ASSERT(FALSE);
+//    return EFI_UNSUPPORTED;
+//  }
+//  
+//  /* Called by unmask_interrupt() */
+//  unsigned reg = (Source > 31) ? VIC_INT_ENSET1 : VIC_INT_ENSET0;
+//	unsigned bit = 1 << (Source & 31);
+//	MmioWrite32(reg, bit);
+
   return EFI_SUCCESS;
 }
 
@@ -174,22 +150,46 @@ DisableInterruptSource (
   IN HARDWARE_INTERRUPT_SOURCE          Source
   )
 {
-  UINTN Bank;
-  UINTN Bit;
+//  if (Source > NR_IRQS) {
+//    ASSERT(FALSE);
+//    return EFI_UNSUPPORTED;
+//  }
+//
+//  /* Called by mask_interrupt() */
+//  unsigned reg = (Source > 31) ? VIC_INT_ENCLEAR1 : VIC_INT_ENCLEAR0;
+//	unsigned bit = 1 << (Source & 31);
+//	MmioWrite32(reg, bit);
   
-  if (Source > MAX_VECTOR) {
-    ASSERT(FALSE);
-    return EFI_UNSUPPORTED;
-  }
-  
-  Bank = MmioRead32(VIC(0) + VICINTENABLE);
-  Bit  = (Bank & ~(1 << Source));
-  
-  MmioWrite32 (VIC(0) + VICINTENABLE, Bit);
-
   return EFI_SUCCESS;
 }
 
+/**
+  Shutdown our hardware
+  
+  DXE Core will disable interrupts and turn off the timer and disable interrupts
+  after all the event handlers have run.
+
+  @param[in]  Event   The Event that is being processed
+  @param[in]  Context Event Context
+**/
+VOID
+EFIAPI
+ExitBootServicesEvent (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+ // UINTN Index;
+//
+ // // Mask all interrupts
+ // for (Index = 0; Index < NR_IRQS; Index++) {
+ //   DisableInterruptSource(NULL, Index);
+ // }
+  // Disable all interrupts
+    DEBUG ((DEBUG_INFO, "Deinit Interupts on ExitBootServicesEvent\n"));
+  DeinitInterupts();
+    DEBUG ((DEBUG_INFO, "Deinited\n"));
+}
 
 
 /**
@@ -211,25 +211,22 @@ GetInterruptSourceState (
   IN BOOLEAN                            *InterruptState
   )
 {
-  UINTN Bit;
-  
-  if (InterruptState == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-  
-  if (Source > MAX_VECTOR) {
-    ASSERT(FALSE);
-    return EFI_UNSUPPORTED;
-  }
+//  UINTN Bit;
+//
+//  if (Source > NR_IRQS) {
+//    ASSERT(FALSE);
+//    return EFI_UNSUPPORTED;
+//  }
+//
+//	Bit = 1 << (Source & 31);
+//
+//  if ((MmioRead32((Source > 31) ? VIC_INT_ENCLEAR1 : VIC_INT_ENCLEAR0) & Bit) == Bit) {
+//    *InterruptState = FALSE;
+//  }
+//  else {
+//    *InterruptState = TRUE;
+//  }
 
-  Bit  = 1UL << (Source % 32);
-    
-  if ((MmioRead32(VIC(0) + VICINTENABLE) & Bit) == Bit) {
-    *InterruptState = FALSE;
-  } else {
-    *InterruptState = TRUE;
-  }
-  
   return EFI_SUCCESS;
 }
 
@@ -251,8 +248,14 @@ EndOfInterrupt (
   IN HARDWARE_INTERRUPT_SOURCE          Source
   )
 {
-  MmioWrite32 (VIC(0) + VICADDRESS, 0);
-  ArmDataSynchronizationBarrier ();
+//  if (Source > NR_IRQS) {
+//    ASSERT(FALSE);
+//    return EFI_UNSUPPORTED;
+//  }
+//
+//  MmioWrite32(VIC_IRQ_VEC_WR, 0);
+//  ArmDataSynchronizationBarrier ();
+//
   return EFI_SUCCESS;
 }
 
@@ -275,23 +278,24 @@ IrqInterruptHandler (
   IN EFI_SYSTEM_CONTEXT           SystemContext
   )
 {
-  //UINT32                     Vector;
-  //HARDWARE_INTERRUPT_HANDLER InterruptHandler;
-  //
-  //Vector = MmioRead32 (VIC(0) + VICADDRESS);
-  //
-  //// Needed to prevent infinite nesting when Time Driver lowers TPL
-  //ArmDataSynchronizationBarrier ();
-  //
-  //InterruptHandler = gRegisteredInterruptHandlers[Vector];
-  //if (InterruptHandler != NULL) {
-  //  // Call the registered interrupt handler.
-  //  InterruptHandler (Vector, SystemContext);
-  //}
-  //
-  //// Needed to clear after running the handler
-  //MmioWrite32 (VIC(0) + VICADDRESS, 0);
-  //ArmDataSynchronizationBarrier ();
+//  UINT32                     Vector;
+//  HARDWARE_INTERRUPT_HANDLER InterruptHandler;
+//  
+//  Vector = MmioRead32 (VIC_IRQ_VEC_RD);
+//  MmioWrite32((Vector > 31) ? VIC_INT_CLEAR1 : VIC_INT_CLEAR0, 1 << (Vector & 31));
+//
+//  // Needed to prevent infinite nesting when Time Driver lowers TPL
+//  ArmDataSynchronizationBarrier ();
+//  
+//  InterruptHandler = gRegisteredInterruptHandlers[Vector];
+//  if (InterruptHandler != NULL) {
+//    // Call the registered interrupt handler.
+//    InterruptHandler (Vector, SystemContext);
+//  }
+//
+//  // Clear after running the handler
+//  MmioWrite32(VIC_IRQ_VEC_WR, 0);
+//  ArmDataSynchronizationBarrier ();
 }
 
 //
@@ -332,36 +336,6 @@ InterruptDxeInitialize (
 
   // Make sure the Interrupt Controller Protocol is not already installed in the system.
   ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gHardwareInterruptProtocolGuid);
-
-  // Make sure all interrupts are disabled by default.
-  //MmioWrite32(VIC(0) + VICINTENCLEAR, 0xFFFFFFFF);
-  //MmioWrite32(VIC(1) + VICINTENCLEAR, 0xFFFFFFFF);
-  //MmioWrite32(VIC(2) + VICINTENCLEAR, 0xFFFFFFFF);
-  //MmioWrite32(VIC(3) + VICINTENCLEAR, 0xFFFFFFFF);
-  //
-  //MmioWrite32(VIC(0) + VICINTENABLE, 0);
-  //MmioWrite32(VIC(1) + VICINTENABLE, 0);
-  //MmioWrite32(VIC(2) + VICINTENABLE, 0);
-  //MmioWrite32(VIC(3) + VICINTENABLE, 0);
-  //
-  //MmioWrite32(VIC(0) + VICINTSELECT, 0);
-  //MmioWrite32(VIC(1) + VICINTSELECT, 0);
-  //MmioWrite32(VIC(2) + VICINTSELECT, 0);
-  //MmioWrite32(VIC(3) + VICINTSELECT, 0);
-  //
-  //MmioWrite32(VIC(0) + VICSWPRIORITYMASK, 0xFFFF);
-  //MmioWrite32(VIC(1) + VICSWPRIORITYMASK, 0xFFFF);
-  //MmioWrite32(VIC(2) + VICSWPRIORITYMASK, 0xFFFF);
-  //MmioWrite32(VIC(3) + VICSWPRIORITYMASK, 0xFFFF);
-  //
-  //int i;
-  //for (i = 0; i < 0x20; i++) {
-  //  MmioWrite32(VIC(0) + VICVECTADDRS + (i * 4), (0x20 * 0) + i);
-  //  MmioWrite32(VIC(1) + VICVECTADDRS + (i * 4), (0x20 * 1) + i);
-  //  MmioWrite32(VIC(2) + VICVECTADDRS + (i * 4), (0x20 * 2) + i);
-  //  MmioWrite32(VIC(3) + VICVECTADDRS + (i * 4), (0x20 * 3) + i);
-  //}
-
  
   Status = gBS->InstallMultipleProtocolInterfaces(&gHardwareInterruptHandle,
                                                   &gHardwareInterruptProtocolGuid,   &gHardwareInterruptProtocol,
@@ -377,19 +351,22 @@ InterruptDxeInitialize (
   //
   // Unregister the default exception handler.
   //
-  Status = Cpu->RegisterInterruptHandler(Cpu, EXCEPT_ARM_IRQ, NULL);
-  //ASSERT_EFI_ERROR(Status);
+//  Status = Cpu->RegisterInterruptHandler(Cpu, EXCEPT_ARM_IRQ, NULL);
+//  if (EFI_ERROR (Status)) {
+//    DEBUG((DEBUG_ERROR, "%a: Unregistering default exception handlers failed!! Status: 0x%llx\n", __FUNCTION__, Status));
+//  }
 
   //
   // Register to receive interrupts
   //
   Status = Cpu->RegisterInterruptHandler(Cpu, EXCEPT_ARM_IRQ, IrqInterruptHandler);
-  //ASSERT_EFI_ERROR(Status);
+//  ASSERT_EFI_ERROR(Status);
 
   // Register for an ExitBootServicesEvent
   Status = gBS->CreateEvent(EVT_SIGNAL_EXIT_BOOT_SERVICES, TPL_NOTIFY, ExitBootServicesEvent, NULL, &EfiExitBootServicesEvent);
-  //ASSERT_EFI_ERROR(Status);
+//  ASSERT_EFI_ERROR(Status);
+
+  InitInterrupts();
 
   return Status;
 }
-
