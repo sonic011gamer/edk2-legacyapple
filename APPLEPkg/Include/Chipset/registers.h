@@ -20,8 +20,8 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef __PLATFORM_INTERRUPTS_H
-#define __PLATFORM_INTERRUPTS_H
+#ifndef _REGISTERS_H
+#define _REGISTERS_H
 
 #define AIC_BASE_ADDR			(0x3F200000)
 
@@ -40,4 +40,7 @@
 #define kAIC_NUM_EIRS			AIC_SRC_TO_EIR(kAIC_MAX_EXTID)
 
 #define rAIC_EIR_MASK_SET(_n)			(*(volatile UINT32 *)(AIC_BASE_ADDR + 0x4100 + ((_n) * 4)))
+
+#define TimerSystemCount  (*(volatile UINT32 *)(AIC_BASE_ADDR + 0x0020))
+
 #endif

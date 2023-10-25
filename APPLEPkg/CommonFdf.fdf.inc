@@ -142,7 +142,7 @@
 
 [Rule.Common.USER_DEFINED.ACPITABLE]
   FILE FREEFORM = $(NAMED_GUID) {
-    RAW ACPI               |.acpi
-    RAW ASL                |.aml
+    RAW ACPI Optional           |.acpi
+    RAW ASL  Optional           |.aml
   }
 

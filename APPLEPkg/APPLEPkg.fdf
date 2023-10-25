@@ -26,12 +26,12 @@
 
 [FD.APPLEPKG_UEFI]
 BaseAddress   = 0x84000000|gArmTokenSpaceGuid.PcdFdBaseAddress  # The base address of the Firmware in NOR Flash.
-Size          = 0x00900000|gArmTokenSpaceGuid.PcdFdSize         # The size in bytes of the FLASH Device
+Size          = 0x00AE0000|gArmTokenSpaceGuid.PcdFdSize         # The size in bytes of the FLASH Device
 ErasePolarity = 1
 
 # This one is tricky, it must be: BlockSize * NumBlocks = Size
 BlockSize     = 0x00001000
-NumBlocks     = 0x900
+NumBlocks     = 0xAE0
 
 ################################################################################
 #
@@ -49,7 +49,7 @@ NumBlocks     = 0x900
 #
 ################################################################################
 
-0x00000000|0x00900000
+0x00000000|0x00Ae0000
 
 gArmTokenSpaceGuid.PcdFvBaseAddress|gArmTokenSpaceGuid.PcdFvSize
 FV = FVMAIN_COMPACT
@@ -197,7 +197,7 @@ APRIORI DXE {
   INF MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   INF FatPkg/EnhancedFatDxe/Fat.inf
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
-  INF MdeModulePkg/Universal/FvSimpleFileSystemDxe/FvSimpleFileSystemDxe.inf
+  # INF MdeModulePkg/Universal/FvSimpleFileSystemDxe/FvSimpleFileSystemDxe.inf
 
   INF MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 
@@ -241,7 +241,7 @@ APRIORI DXE {
 
   # Embedded RAMDisk (ISO format)
   FILE FREEFORM = 650B7CD0-94F8-46CC-88DE-8C199D41EDA3 {
-    SECTION RAW = APPLEPkg/RAMDisk/Win.iso
+    SECTION RAW = APPLEPkg/RAMDisk/image.img
     SECTION UI = "Embedded RAMDisk"  
   }
 ################################################################################

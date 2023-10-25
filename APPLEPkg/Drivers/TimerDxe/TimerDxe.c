@@ -1,21 +1,15 @@
 /** @file
-  Template for Timer Architecture Protocol driver of the ARM flavor
+  Timer Architecture Protocol driver of the ARM flavor
 
-  Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
+  Copyright (c) 2011-2021, Arm Limited. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-
 #include <PiDxe.h>
 
+#include <Library/ArmLib.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -23,76 +17,26 @@
 #include <Library/UefiLib.h>
 #include <Library/PcdLib.h>
 #include <Library/IoLib.h>
+#include <Library/ArmGenericTimerCounterLib.h>
+#include <Chipset/registers.h>
 
 #include <Protocol/Timer.h>
 #include <Protocol/HardwareInterrupt.h>
 
-#define DGT_ENABLE_CLR_ON_MATCH_EN        2
-#define DGT_ENABLE_EN                     1
-
-//
-// Notifications
-//
-EFI_EVENT EfiExitBootServicesEvent      = (EFI_EVENT)NULL;
-
 // The notification function to call on every timer interrupt.
-volatile EFI_TIMER_NOTIFY      mTimerNotifyFunction   = (EFI_TIMER_NOTIFY)NULL;
+EFI_TIMER_NOTIFY  mTimerNotifyFunction     = (EFI_TIMER_NOTIFY)NULL;
+EFI_EVENT         EfiExitBootServicesEvent = (EFI_EVENT)NULL;
 
 // The current period of the timer interrupt
-volatile UINT64 mTimerPeriod = 0;
+UINT64  mTimerPeriod = 0;
+// The latest Timer Tick calculated for mTimerPeriod
+UINT64  mTimerTicks = 0;
+// Number of elapsed period since the last Timer interrupt
+UINT64  mElapsedPeriod = 1;
 
+UINT64 compareValue = 0;
 // Cached copy of the Hardware Interrupt protocol instance
-EFI_HARDWARE_INTERRUPT_PROTOCOL *gInterrupt = NULL;
-
-// Cached interrupt vector
-volatile UINTN  gVector;
-
-
-//void platform_uninit_timer(void)
-//{
-//	writel(0, DGT_ENABLE);
-//	writel(0, DGT_CLEAR);
-//}
-
-/**
-
-  C Interrupt Handler calledin the interrupt context when Source interrupt is active.
-
-
-  @param Source         Source of the interrupt. Hardware routing off a specific platform defines
-                        what source means.
-
-  @param SystemContext  Pointer to system register context. Mostly used by debuggers and will
-                        update the system context after the return from the interrupt if
-                        modified. Don't change these values unless you know what you are doing
-
-**/
-
-VOID
-EFIAPI
-TimerInterruptHandler (
-  IN  HARDWARE_INTERRUPT_SOURCE   Source,
-  IN  EFI_SYSTEM_CONTEXT          SystemContext
-  )
-{
-  EFI_TPL OriginalTPL;
-
-  //
-  // DXE core uses this callback for the EFI timer tick. 
-  // The DXE core uses locks that raise to TPL_HIGH and then restore back to current level. 
-  // Thus we need to make sure TPL level is set to TPL_HIGH while we are handling the timer tick.
-  //
-  OriginalTPL = gBS->RaiseTPL (TPL_HIGH_LEVEL);
-
-  if (mTimerNotifyFunction) {
-    mTimerNotifyFunction(mTimerPeriod);
-  }
-  
-  // signal end of interrupt early to help avoid losing subsequent ticks from long duration handlers
-  gInterrupt->EndOfInterrupt (gInterrupt, Source);
-
-  gBS->RestoreTPL (OriginalTPL);
-}
+EFI_HARDWARE_INTERRUPT_PROTOCOL  *gInterrupt = NULL;
 
 /**
   This function registers the handler NotifyFunction so it is called every time
@@ -122,7 +66,6 @@ TimerInterruptHandler (
   @retval EFI_DEVICE_ERROR      The timer handler could not be registered.
 
 **/
-
 EFI_STATUS
 EFIAPI
 TimerDriverRegisterHandler (
@@ -141,6 +84,28 @@ TimerDriverRegisterHandler (
   mTimerNotifyFunction = NotifyFunction;
 
   return EFI_SUCCESS;
+}
+
+/**
+    Disable the timer
+**/
+VOID
+EFIAPI
+ExitBootServicesEvent (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  DEBUG((DEBUG_INFO, "Won't disable Timer, why would I?\n"));
+}
+
+VOID
+EFIAPI
+TimerSetCompareVal (
+  IN   UINT64  Value
+  )
+{
+  compareValue = Value;
 }
 
 /**
@@ -171,7 +136,6 @@ TimerDriverRegisterHandler (
   @retval EFI_DEVICE_ERROR      The timer period could not be changed due to a device error.
 
 **/
-
 EFI_STATUS
 EFIAPI
 TimerDriverSetTimerPeriod (
@@ -179,26 +143,46 @@ TimerDriverSetTimerPeriod (
   IN UINT64                   TimerPeriod
   )
 {
-  EFI_STATUS  Status;
-  
-  if (TimerPeriod == 0) 
-  {
-    /* Disable the timer interrupt */
-    Status = gInterrupt->DisableInterruptSource(gInterrupt, gVector);
-  } 
-  else 
-  {
-    /* Enable the timer interrupt */
-    Status = gInterrupt->EnableInterruptSource(gInterrupt, gVector);
+  UINT64   CounterValue;
+  UINT64   TimerTicks;
+  EFI_TPL  OriginalTPL;
+
+  if (TimerPeriod != 0) {
+    // mTimerTicks = TimerPeriod in 1ms unit x Frequency.10^-3
+    //             = TimerPeriod.10^-4 x Frequency.10^-3
+    //             = (TimerPeriod x Frequency) x 10^-7
+    TimerTicks = MultU64x32 (TimerPeriod, PcdGet32 (PcdArmArchTimerFreqInHz) );
+    TimerTicks = DivU64x32 (TimerTicks, 10000000U);
+
+    // Raise TPL to update the mTimerTicks and mTimerPeriod to ensure these values
+    // are coherent in the interrupt handler
+    OriginalTPL = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+
+    mTimerTicks    = TimerTicks;
+    mTimerPeriod   = TimerPeriod;
+    mElapsedPeriod = 1;
+
+    gBS->RestoreTPL (OriginalTPL);
+
+
+    // Get value of the current timer
+    CounterValue = TimerSystemCount;
+    // Set the interrupt in Current Time + mTimerTick
+    TimerSetCompareVal (CounterValue + mTimerTicks);
+
+  while (CounterValue < TimerTicks) {
+    CounterValue = TimerSystemCount;
   }
 
-  //
-  // Save the new timer period
-  //
-  mTimerPeriod = TimerPeriod;
-  return Status;
-}
+  } else {
+    // Save the new timer period
+    mTimerPeriod = TimerPeriod;
+    // Reset the elapsed period
+    mElapsedPeriod = 1;
+  }
 
+  return EFI_SUCCESS;
+}
 
 /**
   This function retrieves the period of timer interrupts in 100 ns units,
@@ -218,8 +202,8 @@ TimerDriverSetTimerPeriod (
 EFI_STATUS
 EFIAPI
 TimerDriverGetTimerPeriod (
-  IN EFI_TIMER_ARCH_PROTOCOL   *This,
-  OUT UINT64                   *TimerPeriod
+  IN EFI_TIMER_ARCH_PROTOCOL  *This,
+  OUT UINT64                  *TimerPeriod
   )
 {
   if (TimerPeriod == NULL) {
@@ -254,9 +238,8 @@ TimerDriverGenerateSoftInterrupt (
   return EFI_UNSUPPORTED;
 }
 
-
 /**
-  Interface stucture for the Timer Architectural Protocol.
+  Interface structure for the Timer Architectural Protocol.
 
   @par Protocol Description:
   This protocol provides the services to initialize a periodic timer
@@ -289,30 +272,77 @@ TimerDriverGenerateSoftInterrupt (
   a period of time.
 
 **/
-EFI_TIMER_ARCH_PROTOCOL   gTimer = {
+EFI_TIMER_ARCH_PROTOCOL  gTimer = {
   TimerDriverRegisterHandler,
   TimerDriverSetTimerPeriod,
   TimerDriverGetTimerPeriod,
   TimerDriverGenerateSoftInterrupt
 };
 
+/**
+
+  C Interrupt Handler called in the interrupt context when Source interrupt is active.
+
+
+  @param Source         Source of the interrupt. Hardware routing off a specific platform defines
+                        what source means.
+
+  @param SystemContext  Pointer to system register context. Mostly used by debuggers and will
+                        update the system context after the return from the interrupt if
+                        modified. Don't change these values unless you know what you are doing
+
+**/
 VOID
 EFIAPI
-ExitBootServicesEvent (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
+TimerInterruptHandler (
+  IN  HARDWARE_INTERRUPT_SOURCE  Source,
+  IN  EFI_SYSTEM_CONTEXT         SystemContext
   )
 {
-  EFI_STATUS  Status = EFI_SUCCESS;
+  EFI_TPL  OriginalTPL;
+  UINT64   CurrentValue;
+  UINT64   CompareValue;
 
-  DEBUG ((DEBUG_INFO, "Disabling Timer on ExitBootServicesEvent\n"));
+  //
+  // DXE core uses this callback for the EFI timer tick. The DXE core uses locks
+  // that raise to TPL_HIGH and then restore back to current level. Thus we need
+  // to make sure TPL level is set to TPL_HIGH while we are handling the timer tick.
+  //
+  OriginalTPL = gBS->RaiseTPL (TPL_HIGH_LEVEL);
 
-  // Disable the timer
-  Status = TimerDriverSetTimerPeriod (&gTimer, 0);
-  ASSERT_EFI_ERROR (Status);
-  DEBUG ((DEBUG_INFO, "Disabled Timer on ExitBootServicesEvent\n"));
+  // Signal end of interrupt early to help avoid losing subsequent ticks
+  // from long duration handlers
+  gInterrupt->EndOfInterrupt (gInterrupt, Source);
+
+  // Check if the timer interrupt is active
+  if (mTimerNotifyFunction != 0) {
+    mTimerNotifyFunction (mTimerPeriod * mElapsedPeriod);
+  }
+
+  //
+  // Reload the Timer
+  //
+
+  // Get current counter value
+  CurrentValue = TimerSystemCount;
+  // Get the counter value to compare with
+  CompareValue = compareValue;
+  DEBUG((DEBUG_INFO, "CompareValue is %X\n", compareValue));
+  // This loop is needed in case we missed interrupts (eg: case when the interrupt handling
+  // has taken longer than mTickPeriod).
+  // Note: Physical Counter is counting up
+  mElapsedPeriod = 0;
+  do {
+    CompareValue += mTimerTicks;
+    mElapsedPeriod++;
+  } while (CompareValue < CurrentValue);
+
+  // Set next compare value
+  TimerSetCompareVal (CompareValue);
+  ArmInstructionSynchronizationBarrier ();
+
+  gBS->RestoreTPL (OriginalTPL);
 }
-
 
 /**
   Initialize the state information for the Timer Architectural Protocol and
@@ -330,47 +360,33 @@ ExitBootServicesEvent (
 EFI_STATUS
 EFIAPI
 TimerInitialize (
-  IN EFI_HANDLE         ImageHandle,
-  IN EFI_SYSTEM_TABLE   *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_HANDLE  Handle = NULL;
+  EFI_HANDLE  Handle;
   EFI_STATUS  Status;
 
   // Find the interrupt controller protocol.  ASSERT if not found.
   Status = gBS->LocateProtocol (&gHardwareInterruptProtocolGuid, NULL, (VOID **)&gInterrupt);
   ASSERT_EFI_ERROR (Status);
 
-  gVector = (6);
-  
-  // Disable the timer
-  Status = TimerDriverSetTimerPeriod (&gTimer, 0);
+  // Set up default timer
+  Status = TimerDriverSetTimerPeriod (&gTimer, FixedPcdGet32 (PcdTimerPeriod)); // TIMER_DEFAULT_PERIOD
   ASSERT_EFI_ERROR (Status);
 
-  // Install interrupt handler
-  Status = gInterrupt->RegisterInterruptSource (gInterrupt, gVector, TimerInterruptHandler);
-  ASSERT_EFI_ERROR (Status);
-
-  // Set up default timer (10ms period)
-  Status = TimerDriverSetTimerPeriod (&gTimer, 100000); /* Change to FixedPcdGet32(PcdTimerPeriod) later */
-  ASSERT_EFI_ERROR (Status);
-
+  Handle = NULL;
   // Install the Timer Architectural Protocol onto a new handle
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &Handle,
-                  &gEfiTimerArchProtocolGuid,      &gTimer,
+                  &gEfiTimerArchProtocolGuid,
+                  &gTimer,
                   NULL
                   );
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
-  // Register for ExitBootServicesEvent
-  Status = gBS->CreateEvent (
-             EVT_SIGNAL_EXIT_BOOT_SERVICES,
-             TPL_NOTIFY,
-             ExitBootServicesEvent,
-             NULL,
-             &EfiExitBootServicesEvent);
-
+  // Register for an ExitBootServicesEvent
+  Status = gBS->CreateEvent (EVT_SIGNAL_EXIT_BOOT_SERVICES, TPL_NOTIFY, ExitBootServicesEvent, NULL, &EfiExitBootServicesEvent);
   ASSERT_EFI_ERROR (Status);
 
   return Status;

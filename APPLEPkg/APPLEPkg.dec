@@ -47,5 +47,5 @@
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x10000|UINT32|0x00000038
   gArmPlatformTokenSpaceGuid.PcdCPUCoreSecondaryStackSize|0x10000|UINT32|0x00000039
  # Memory allocation
-  gAPPLEPkgTokenSpaceGuid.PcdPreAllocatedMemorySize|0x04900000|UINT64|0x00000a106
-  gAPPLEPkgTokenSpaceGuid.PcdUefiMemPoolSize|0x0F3B0000|UINT32|0x00000a107
+  gAPPLEPkgTokenSpaceGuid.PcdPreAllocatedMemorySize|0x0EE00000|UINT64|0x00000a106
+  gAPPLEPkgTokenSpaceGuid.PcdUefiMemPoolSize|0x093B0000|UINT32|0x00000a107

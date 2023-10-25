@@ -29,5 +29,4 @@
   ArmGenericTimerCounterLib
 
 [Pcd]
-  gEmbeddedTokenSpaceGuid.PcdEmbeddedPerformanceCounterFrequencyInHz
   gArmTokenSpaceGuid.PcdArmArchTimerFreqInHz

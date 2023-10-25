@@ -27,7 +27,7 @@
 #include <Protocol/Cpu.h>
 #include <Protocol/HardwareInterrupt.h>
 
-#include <Chipset/interrupts.h>
+#include <Chipset/registers.h>
 //#include <Chipset/irqs.h>
 
 //
@@ -187,7 +187,7 @@ ExitBootServicesEvent (
  // }
   // Disable all interrupts
     DEBUG ((DEBUG_INFO, "Deinit Interupts on ExitBootServicesEvent\n"));
-  DeinitInterupts();
+  //DeinitInterupts();
     DEBUG ((DEBUG_INFO, "Deinited\n"));
 }
 
@@ -366,7 +366,7 @@ InterruptDxeInitialize (
   Status = gBS->CreateEvent(EVT_SIGNAL_EXIT_BOOT_SERVICES, TPL_NOTIFY, ExitBootServicesEvent, NULL, &EfiExitBootServicesEvent);
 //  ASSERT_EFI_ERROR(Status);
 
-  InitInterrupts();
+  //InitInterrupts();
 
   return Status;
 }

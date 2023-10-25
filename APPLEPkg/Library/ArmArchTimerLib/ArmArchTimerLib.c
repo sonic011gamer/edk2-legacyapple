@@ -15,10 +15,16 @@
 #include <Library/PcdLib.h>
 #include <Library/ArmGenericTimerCounterLib.h>
 
-#define OSC_FREQ          (24000000UL)
-#define AIC_BASE_ADDR     (0x3F200000)
-#define rAIC_TIME_LO      (*(volatile UINT32 *)(AIC_BASE_ADDR + 0x0020))
-/* timer */
+#define TimerSystemCount  (*(volatile UINT32 *)(0x3F200000 + 0x0020))
+
+#define TICKS_PER_MICRO_SEC  (PcdGet32 (PcdArmArchTimerFreqInHz)/1000000U)
+
+// Select appropriate multiply function for platform architecture.
+#ifdef MDE_CPU_ARM
+#define MULT_U64_X_N  MultU64x32
+#else
+#define MULT_U64_X_N  MultU64x64
+#endif
 
 RETURN_STATUS
 EFIAPI
@@ -26,8 +32,27 @@ TimerConstructor (
   VOID
   )
 {
-  DEBUG ((EFI_D_ERROR, "Timer init not done!!!\n"));
   return RETURN_SUCCESS;
+}
+
+/**
+  A local utility function that returns the PCD value, if specified.
+  Otherwise it defaults to ArmGenericTimerGetTimerFreq.
+
+  @return The timer frequency.
+
+**/
+STATIC
+UINTN
+EFIAPI
+GetPlatformTimerFreq (
+  )
+{
+  UINTN  TimerFreq;
+
+  TimerFreq = PcdGet32 (PcdArmArchTimerFreqInHz);
+
+  return TimerFreq;
 }
 
 /**
@@ -44,10 +69,29 @@ MicroSecondDelay (
   IN      UINTN  MicroSeconds
   )
 {
-  UINT32 start_time = rAIC_TIME_LO;
-  UINT32 delta_time = MicroSeconds * (OSC_FREQ / 1000000);
+  UINT64  TimerTicks64;
+  UINT64  SystemCounterVal;
 
-  while ((rAIC_TIME_LO - start_time) < delta_time);
+  // Calculate counter ticks that represent requested delay:
+  //  = MicroSeconds x TICKS_PER_MICRO_SEC
+  //  = MicroSeconds x Frequency.10^-6
+  TimerTicks64 = DivU64x32 (
+                   MULT_U64_X_N (
+                     MicroSeconds,
+                     GetPlatformTimerFreq ()
+                     ),
+                   1000000U
+                   );
+
+  // Read System Counter value
+  SystemCounterVal = TimerSystemCount;
+
+  TimerTicks64 += SystemCounterVal;
+
+  // Wait until delay count expires.
+  while (SystemCounterVal < TimerTicks64) {
+    SystemCounterVal = TimerSystemCount;
+  }
 
   return MicroSeconds;
 }
@@ -78,7 +122,7 @@ NanoSecondDelay (
   MicroSeconds += ((NanoSeconds % 1000) == 0) ? 0 : 1;
 
   MicroSecondDelay (MicroSeconds);
-  
+
   return NanoSeconds;
 }
 
@@ -99,8 +143,8 @@ GetPerformanceCounter (
   VOID
   )
 {
-  // Todo
-  return (UINT64)-1;
+  // Just return the value of system count
+  return TimerSystemCount;
 }
 
 /**
@@ -133,18 +177,17 @@ GetPerformanceCounterProperties (
   OUT      UINT64  *EndValue     OPTIONAL
   )
 {
-  // Todo
   if (StartValue != NULL) {
-    // Timer starts with the reload value
-    *StartValue = (UINT64)10000;
+    // Timer starts at 0
+    *StartValue = (UINT64)0ULL;
   }
-  
+
   if (EndValue != NULL) {
-    // Timer counts up to 0xFFFFFFFF
-    *EndValue = 0xFFFFFFFF;
+    // Timer counts up.
+    *EndValue = 0xFFFFFFFFFFFFFFFFUL;
   }
-  
-  return PcdGet64(PcdEmbeddedPerformanceCounterFrequencyInHz);
+
+  return (UINT64)PcdGet32 (PcdArmArchTimerFreqInHz);
 }
 
 /**
@@ -164,6 +207,36 @@ GetTimeInNanoSecond (
   IN      UINT64  Ticks
   )
 {
-  UINT64  NanoSeconds = Ticks / (OSC_FREQ / 1000000);
+  UINT64  NanoSeconds;
+  UINT32  Remainder;
+  UINT32  TimerFreq;
+
+  TimerFreq = GetPlatformTimerFreq ();
+  //
+  //          Ticks
+  // Time = --------- x 1,000,000,000
+  //        Frequency
+  //
+  NanoSeconds = MULT_U64_X_N (
+                  DivU64x32Remainder (
+                    Ticks,
+                    TimerFreq,
+                    &Remainder
+                    ),
+                  1000000000U
+                  );
+
+  //
+  // Frequency < 0x100000000, so Remainder < 0x100000000, then (Remainder * 1,000,000,000)
+  // will not overflow 64-bit.
+  //
+  NanoSeconds += DivU64x32 (
+                   MULT_U64_X_N (
+                     (UINT64)Remainder,
+                     1000000000U
+                     ),
+                   TimerFreq
+                   );
+
   return NanoSeconds;
 }

@@ -1,4 +1,4 @@
-DefinitionBlock("DSDT.aml", "DSDT", 5, "APPLE ", "S5L8950 ", 2)
+DefinitionBlock("DSDT.aml", "DSDT", 5, "SAMSUN", "EXY7885 ", 2)
 {
 	Scope (\_SB_)
   {
@@ -12,11 +12,10 @@ DefinitionBlock("DSDT.aml", "DSDT", 5, "APPLE ", "S5L8950 ", 2)
                 Return(0xf)
             }
         }
-
-        Device (CPU1)
+		Device (CPU1)
         {
-            Name (_HID, "ACPI0007")
-            Name (_UID, 0x1)
+		    Name (_HID, "ACPI0007")
+            Name (_UID, 0x0)
 			Method (_STA)
             {
                 Return(0xf)
